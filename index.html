@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Permissions-Policy" content="microphone=*">
 <meta name="description" content="A.N.N.A — AI Personal Assistant">
 <title>A.N.N.A — AI Personal Assistant by Ashok Bhupathy</title>
@@ -519,11 +519,100 @@
   .mini-viewer-action:hover { border-color: var(--arc); color: var(--arc); background: var(--arc-deep); }
   .mini-viewer-action.primary { border-color: var(--arc); color: var(--arc); }
 
-  @media(max-width:950px){.panel-left{width:195px}.panel-right{display:none}}
-  @media(max-width:620px){.panel-left{display:none}.status-bar{display:none}}
+  /* ══════════════ MOBILE / RESPONSIVE ══════════════ */
+  .panel-toggle-btn{display:none;}
+  .drawer-backdrop{display:none;}
+
+  @media(max-width:950px){
+    .panel-left{width:210px}
+    .panel-right{display:none}
+  }
+
+  @media(max-width:620px){
+    html,body{overflow-x:hidden;}
+
+    /* Topbar: wrap into two rows, shrink everything, keep it usable */
+    .topbar{padding:8px 10px;gap:6px;flex-wrap:wrap;}
+    .logo{font-size:0.92rem;letter-spacing:0.18em;gap:6px;}
+    .arc-reactor{width:24px;height:24px;}
+    .topbar-center{order:3;width:100%;justify-content:flex-start;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+    .monitor-btn{font-size:0.5rem;padding:5px 8px;flex-shrink:0;}
+    .topbar-right{gap:5px;}
+    .status-bar{display:none;}
+    .api-setup-btn{font-size:0.5rem;padding:5px 7px;}
+
+    /* Hamburger buttons to open the Tasks/Notes and Session/Memory panels as drawers */
+    .panel-toggle-btn{
+      display:flex;align-items:center;justify-content:center;
+      width:32px;height:32px;background:transparent;border:1px solid var(--border);
+      color:var(--arc);cursor:pointer;border-radius:2px;font-size:0.95rem;flex-shrink:0;
+    }
+    .panel-toggle-btn:active{background:var(--arc-deep);}
+
+    /* Side panels become off-canvas slide-in drawers instead of disappearing */
+    .panel-left{
+      position:fixed; top:0; left:0; bottom:0; z-index:250;
+      width:80vw; max-width:290px;
+      transform:translateX(-100%);
+      transition:transform 0.25s ease;
+      box-shadow:4px 0 25px rgba(0,0,0,0.6);
+      background:rgba(0,8,20,0.98);
+    }
+    .panel-left.drawer-open{transform:translateX(0);}
+
+    .panel-right{
+      position:fixed; top:0; right:0; bottom:0; z-index:250;
+      width:80vw; max-width:290px;
+      display:flex !important; flex-direction:column; overflow-y:auto;
+      transform:translateX(100%);
+      transition:transform 0.25s ease;
+      box-shadow:-4px 0 25px rgba(0,0,0,0.6);
+      background:rgba(0,8,20,0.98);
+    }
+    .panel-right.drawer-open{transform:translateX(0);}
+
+    .drawer-backdrop{
+      display:block; position:fixed; inset:0; z-index:240;
+      background:rgba(0,0,0,0); pointer-events:none;
+      transition:background 0.25s ease;
+    }
+    .drawer-backdrop.show{background:rgba(0,0,0,0.55); pointer-events:auto;}
+
+    /* Chat input dock: bigger tap targets, no iOS auto-zoom, safe-area padding */
+    .chat-input-area{padding:8px 10px calc(8px + env(safe-area-inset-bottom));}
+    .chat-input{font-size:16px;padding:8px 10px;}
+    .voice-controls{flex-wrap:wrap;gap:4px;}
+    .voice-btn{height:36px;font-size:0.5rem;padding:0 8px;}
+    .send-btn{width:36px;height:36px;}
+    .input-hint{font-size:0.48rem;line-height:1.4;white-space:normal;}
+    .mode-tabs{flex-wrap:wrap;}
+
+    /* Floating camera/screen previews: smaller & repositioned so they never
+       cover the chat input or the on-screen keyboard */
+    #cameraPreviewWrap{right:8px;bottom:150px;width:96px;}
+    #screenPreviewWrap{right:8px;bottom:255px;width:120px;}
+    .preview-video{height:64px;}
+
+    .mic-banner{font-size:0.6rem;padding:8px 10px;flex-wrap:wrap;gap:8px;}
+    #reminderToast{min-width:auto;width:88vw;font-size:0.65rem;}
+    .chat-save-box{width:94vw !important;}
+
+    .avatar-ring{width:70px;height:70px;}
+    .side-section{padding:10px;}
+  }
+
+  @media(max-width:400px){
+    .logo{letter-spacing:0.1em;font-size:0.82rem;}
+    .monitor-btn{padding:4px 6px;font-size:0.46rem;}
+    .voice-btn{font-size:0.46rem;padding:0 6px;}
+  }
 </style>
 </head>
 <body>
+
+<!-- Tap outside an open drawer on mobile to close it -->
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawers()"></div>
+
 
 <!-- ══════════════════ BOOT / INTRO OVERLAY ══════════════════ -->
 <div id="introOverlay">
@@ -879,6 +968,7 @@
 </div>
 
 <div class="topbar">
+  <button class="panel-toggle-btn" id="btnToggleLeft" onclick="toggleLeftPanel()" title="Tasks / Notes / Schedule">☰</button>
   <div class="logo"><div class="arc-reactor"></div>A.N.N.A</div>
   <div class="topbar-center">
     <button class="monitor-btn" id="cameraBtn" onclick="toggleCamera()"><div class="monitor-dot"></div>📷 CAMERA</button>
@@ -898,6 +988,7 @@
     <button class="api-setup-btn" onclick="openFileCreator()" style="border-color:var(--gold);color:var(--gold)" title="Create a new file">✨ CREATE</button>
     <button class="api-setup-btn" onclick="toggleCredits()" style="border-color:var(--gold);color:var(--gold)">🤖 CREDITS</button>
   </div>
+  <button class="panel-toggle-btn" id="btnToggleRight" onclick="toggleRightPanel()" title="Session / Memory">📊</button>
 </div>
 
 <div class="main">
@@ -1133,6 +1224,10 @@ let pipVideoEl = null, pipCanvas = null, pipAnimFrame = null;
 let notesSaveTimeout = null;
 let interruptCtx = null, interruptAnalyser = null, interruptActive = false;
 let srInstance = null; // single SR instance — no double-fire
+// ★ FIX: mobile browsers (esp. Android Chrome) handle continuous SpeechRecognition
+// very differently than desktop — it frequently drops after one phrase. We detect
+// mobile so the SR logic below can adapt (non-continuous + aggressive auto-restart).
+const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile|webOS/i.test(navigator.userAgent);
 let apiOnline = true, lastApiAttempt = 0;
 let cameraKeepalive = null; // interval to detect/fix camera going black
 const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
@@ -1605,8 +1700,12 @@ function _buildSR() {
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SRClass) return null;
   const sr = new SRClass();
-  // ★ continuous:true = SR runs forever after ONE start() call = ONE permission dialog total
-  sr.continuous      = true;
+  // ★ FIX: continuous:true works well on desktop Chrome (one start() call = one
+  // permission dialog, runs indefinitely). On mobile (especially Android Chrome)
+  // continuous mode is unreliable and often silently drops after a single phrase.
+  // So on mobile we use continuous:false and restart the recognizer immediately
+  // after every utterance instead — this behaves like "always on" in practice.
+  sr.continuous      = !isMobileDevice;
   sr.interimResults  = false;
   sr.lang            = 'en-US';
   sr.maxAlternatives = 1;
@@ -1636,11 +1735,13 @@ function _buildSR() {
   };
 
   sr.onend = () => {
-    // With continuous:true, onend only fires when SR crashes or is aborted
-    // Only restart if still active and not intentionally stopped
+    // Desktop (continuous:true): onend only fires when SR crashes or is aborted.
+    // Mobile (continuous:false): onend fires normally after EVERY utterance —
+    // that's expected, so restart quickly to keep the hands-free loop going.
+    window.srLastActivity = Date.now();
     if (!isAlwaysOn || !window.srActive || window.srRestarting) return;
     if (isTapRecording) return; // TAP took over — stopTap() will restart
-    _restartSR(600);
+    _restartSR(isMobileDevice ? 250 : 600);
   };
 
   sr.onerror = (e) => {
@@ -1654,8 +1755,14 @@ function _buildSR() {
       return;
     }
     if (e.error === 'aborted') return;
-    if (e.error === 'no-speech') { window.srPending = false; window.srLastActivity = Date.now(); return; }
-    _restartSR(700);
+    if (e.error === 'no-speech') {
+      window.srPending = false; window.srLastActivity = Date.now();
+      // On mobile, no-speech often ends the session outright without onend firing
+      // separately — make sure we still loop back around.
+      if (isMobileDevice && isAlwaysOn && window.srActive && !isTapRecording) _restartSR(300);
+      return;
+    }
+    _restartSR(isMobileDevice ? 400 : 700);
   };
 
   return sr;
@@ -1694,18 +1801,51 @@ function _startOneSR() {
 let srWatchdogTimer = null;
 function startSRWatchdog() {
   if (srWatchdogTimer) return;
+  const checkEvery = isMobileDevice ? 4000 : 5000;
+  const maxIdle = isMobileDevice ? 9000 : 15000;
   srWatchdogTimer = setInterval(() => {
     if (!isAlwaysOn || !window.srActive) return;
     if (isSpeaking || isTapRecording || window.srRestarting) return;
     const idleFor = Date.now() - (window.srLastActivity || 0);
-    if (idleFor > 15000) {
+    if (idleFor > maxIdle) {
       window.srRecognition = null; // discard the possibly-stuck instance
       _startOneSR();
     }
-  }, 5000);
+  }, checkEvery);
 }
 function stopSRWatchdog() {
   if (srWatchdogTimer) { clearInterval(srWatchdogTimer); srWatchdogTimer = null; }
+}
+
+// ============================================================
+//  ★ MOBILE DRAWERS — Tasks/Notes (left) & Session/Memory (right) panels
+//  slide in as off-canvas drawers on small screens instead of just vanishing.
+// ============================================================
+function toggleLeftPanel() {
+  const left = document.querySelector('.panel-left');
+  const right = document.querySelector('.panel-right');
+  const opening = !left.classList.contains('drawer-open');
+  left.classList.toggle('drawer-open', opening);
+  if (opening) right.classList.remove('drawer-open');
+  updateDrawerBackdrop();
+}
+function toggleRightPanel() {
+  const left = document.querySelector('.panel-left');
+  const right = document.querySelector('.panel-right');
+  const opening = !right.classList.contains('drawer-open');
+  right.classList.toggle('drawer-open', opening);
+  if (opening) left.classList.remove('drawer-open');
+  updateDrawerBackdrop();
+}
+function closeDrawers() {
+  document.querySelector('.panel-left').classList.remove('drawer-open');
+  document.querySelector('.panel-right').classList.remove('drawer-open');
+  updateDrawerBackdrop();
+}
+function updateDrawerBackdrop() {
+  const anyOpen = document.querySelector('.panel-left.drawer-open') || document.querySelector('.panel-right.drawer-open');
+  const bd = document.getElementById('drawerBackdrop');
+  if (bd) bd.classList.toggle('show', !!anyOpen);
 }
 
 function _restartSR(delay) {
@@ -1722,7 +1862,13 @@ function _restartSR(delay) {
 function startListening() {
   if (!isAlwaysOn || window.srActive) return;
   if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
-    addSystemMsg('⚠ Use Chrome browser for voice features.');
+    // ★ FIX: on iOS, EVERY browser (Safari, Chrome, etc.) uses Apple's WebKit engine,
+    // which has no SpeechRecognition support at all — telling iOS users to "use Chrome"
+    // doesn't help them. Point them to TAP mode instead, which works everywhere via Whisper.
+    const msg = isMobileDevice
+      ? '⚠ Hands-free voice isn\'t supported on this device/browser. Use 🎙 TAP to speak instead — it works everywhere.'
+      : '⚠ Use Chrome browser for voice features.';
+    addSystemMsg(msg);
     isAlwaysOn = false; updateAlwaysOnBtn(false); return;
   }
   window.srActive = true;
