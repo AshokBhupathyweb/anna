@@ -4566,6 +4566,10 @@ window.processFileForRead = async function(file) {
     <button class="mini-viewer-action" onclick="closeMiniViewer()">✕ Close</button>
   </div>
 </div>
-
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
 </body>
 </html>
