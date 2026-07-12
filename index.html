@@ -66,6 +66,9 @@
   #screenPreviewWrap .preview-label{color:var(--gold);}
   .preview-close{background:rgba(255,60,60,0.75);color:#fff;border:none;width:14px;height:14px;border-radius:50%;cursor:pointer;font-size:0.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .preview-video{width:100%;height:110px;object-fit:cover;display:block;pointer-events:none;}/* pointer-events:none prevents video from eating mouse events */
+  .preview-mic-btn{width:100%;height:26px;flex-shrink:0;background:rgba(0,212,255,0.12);border:none;border-top:1px solid rgba(0,212,255,0.4);color:var(--arc);font-family:'Orbitron',monospace;font-size:0.46rem;letter-spacing:0.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;touch-action:manipulation;}
+  .preview-mic-btn:hover{background:rgba(0,212,255,0.22);}
+  .preview-mic-btn.recording{background:rgba(255,60,60,0.18);border-top-color:var(--red);color:var(--red);animation:vbPulse 1s ease-in-out infinite;}
 
   /* MAIN */
   .main{flex:1;display:flex;overflow:hidden;position:relative;}
@@ -154,24 +157,26 @@
   .typing-dots span:nth-child(2){animation-delay:0.2s} .typing-dots span:nth-child(3){animation-delay:0.4s}
   @keyframes typingBounce{0%,100%{transform:translateY(0);opacity:0.3}50%{transform:translateY(-4px);opacity:1}}
   .chat-input-area{padding:11px 16px;border-top:1px solid var(--border);background:rgba(0,5,15,0.7);flex-shrink:0;}
+  /* ★ WhatsApp-style input row: textarea + send button only, side by side.
+     Send button stays pinned to the bottom-right as the textarea grows taller. */
   .input-row{display:flex;gap:7px;align-items:flex-end;}
-  /* On desktop the actions row is just a passthrough wrapper so voice-controls + send-btn
-     sit inline with the textarea exactly as before. On mobile (below) it becomes its own
-     full-width row so the textarea never gets squeezed down to nothing. */
-  .input-actions-row{display:contents;}
-  .chat-input{flex:1;background:rgba(0,15,35,0.8);border:1px solid var(--border);color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.82rem;padding:9px 12px;outline:none;resize:none;min-height:40px;max-height:100px;transition:border-color 0.2s;line-height:1.5;}
+  .chat-input{flex:1;background:rgba(0,15,35,0.8);border:1px solid var(--border);color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.82rem;padding:9px 12px;outline:none;resize:none;min-height:40px;max-height:160px;transition:border-color 0.2s;line-height:1.5;overflow-y:auto;}
   .chat-input:focus{border-color:var(--arc);box-shadow:0 0 8px rgba(0,212,255,0.1);}
   .chat-input::placeholder{color:var(--text-dim);}
   .send-btn{width:40px;height:40px;background:var(--arc-deep);border:1px solid var(--arc);color:var(--arc);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);}
   .send-btn:hover{background:rgba(0,212,255,0.18);box-shadow:0 0 12px var(--arc-glow);}
   .send-btn:disabled{opacity:0.4;cursor:not-allowed;}
-  .voice-controls{display:flex;gap:5px;align-items:center;}
-  .voice-btn{height:40px;background:transparent;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.2s;border-radius:2px;font-family:'Orbitron',monospace;font-size:0.52rem;letter-spacing:0.05em;padding:0 9px;white-space:nowrap;}
+  /* ★ TAP / NEW (and the FILE / LOAD CHAT / EMAIL / SAVE buttons injected via JS) now
+     live in their own toolbar row under the input, so they never crowd out the send
+     button. Scrolls horizontally instead of shrinking to illegibly small buttons. */
+  .voice-controls{display:flex;gap:6px;align-items:center;margin-top:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+  .voice-btn{height:34px;background:transparent;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.2s;border-radius:2px;font-family:'Orbitron',monospace;font-size:0.52rem;letter-spacing:0.05em;padding:0 9px;white-space:nowrap;flex-shrink:0;}
   .voice-btn:hover{border-color:var(--arc);color:var(--arc);background:var(--arc-deep);}
   .voice-btn.recording{border-color:var(--red);color:var(--red);background:rgba(255,60,60,0.1);animation:vbPulse 1s ease-in-out infinite;}
   .voice-btn.always-on{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.08);box-shadow:0 0 10px rgba(0,255,136,0.2);}
   @keyframes vbPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,60,60,0.4)}50%{box-shadow:0 0 0 5px rgba(255,60,60,0)}}
   .input-hint{font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--text-dim);margin-top:5px;}
+
 
   /* RIGHT PANEL */
   .panel-right{width:230px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;background:rgba(0,8,20,0.6);backdrop-filter:blur(5px);overflow-y:auto;}
@@ -615,26 +620,28 @@
     .drawer-backdrop.show{background:rgba(0,0,0,0.55); pointer-events:auto;}
 
     /* Chat input dock: bigger tap targets, no iOS auto-zoom, safe-area padding.
-       ★ FIX: the textarea was sharing one row with 3+ buttons (TAP/ALWAYS ON/NEW/SEND),
-       which squeezed it down to almost no width on narrow phones — sometimes invisible.
-       Now the textarea gets its own full-width row, and the buttons drop to a second
-       row underneath, so the input is always fully visible and easy to tap. */
+       ★ FIX: send button used to get buried in a crowded row with 5-6 other
+       buttons (TAP/EMAIL/LOAD CHAT/FILE/NEW/SAVE), sometimes pushed off-screen.
+       Now it's WhatsApp-style: textarea + send button share one row and the
+       textarea grows taller as you type; every other tool button lives in its
+       own compact, horizontally-scrollable row underneath. */
     .chat-input-area{padding:8px 10px calc(8px + env(safe-area-inset-bottom));}
-    .input-row{flex-direction:column;align-items:stretch;gap:8px;}
-    .chat-input{font-size:16px;padding:10px 12px;line-height:1.5;width:100%;min-height:44px;}
-    .input-actions-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;}
-    .voice-controls{flex:1;flex-wrap:nowrap;gap:6px;}
-    .voice-btn{height:40px;font-size:0.56rem;padding:0 10px;flex:1;justify-content:center;}
-    .send-btn{width:44px;height:40px;flex-shrink:0;}
+    .input-row{align-items:flex-end;gap:8px;}
+    .chat-input{font-size:16px;padding:10px 12px;line-height:1.5;width:100%;min-height:44px;max-height:150px;}
+    .send-btn{width:44px;height:44px;flex-shrink:0;}
+    .voice-controls{width:100%;flex-wrap:nowrap;gap:6px;margin-top:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .voice-btn{height:38px;font-size:0.56rem;padding:0 12px;flex-shrink:0;justify-content:center;}
     .input-hint{font-size:0.5rem;line-height:1.5;white-space:normal;margin-top:6px;}
     .mode-tabs{flex-wrap:wrap;}
 
     /* Floating camera/screen previews: smaller & repositioned so they never
-       cover the chat input or the on-screen keyboard */
-    #cameraPreviewWrap{right:8px;bottom:150px;width:100px;}
-    #screenPreviewWrap{right:8px;bottom:255px;width:124px;}
+       cover the chat input or the on-screen keyboard. Slightly wider than
+       before to give the new tap-to-talk mic button a comfortable width. */
+    #cameraPreviewWrap{right:8px;bottom:150px;width:128px;}
+    #screenPreviewWrap{right:8px;bottom:265px;width:128px;}
     .preview-video{height:68px;}
     .preview-handle{height:26px;}
+    .preview-mic-btn{height:30px;font-size:0.5rem;}
 
     .mic-banner{font-size:0.6rem;padding:8px 10px;flex-wrap:wrap;gap:8px;}
     #reminderToast{min-width:auto;width:88vw;font-size:0.65rem;}
@@ -983,6 +990,7 @@
     <button class="preview-close" onclick="toggleCamera()">✕</button>
   </div>
   <video class="preview-video" id="cameraVideo" autoplay muted playsinline></video>
+  <button class="preview-mic-btn" id="camMicBtn" onclick="toggleTapTalk()" title="Tap to talk to ANNA">🎙 TALK</button>
 </div>
 <div class="floating-preview" id="screenPreviewWrap">
   <div class="preview-handle" id="scrHandle">
@@ -990,6 +998,7 @@
     <button class="preview-close" onclick="toggleScreen()">✕</button>
   </div>
   <video class="preview-video" id="screenVideo" autoplay muted playsinline></video>
+  <button class="preview-mic-btn" id="scrMicBtn" onclick="toggleTapTalk()" title="Tap to talk to ANNA">🎙 TALK</button>
 </div>
 
 <div class="topbar">
@@ -1073,15 +1082,13 @@
     <div class="chat-input-area">
       <div class="input-row">
         <textarea class="chat-input" id="chatInput" placeholder="Type or speak to ANNA..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <div class="input-actions-row">
-          <div class="voice-controls">
-            <button class="voice-btn" id="tapTalkBtn" onclick="toggleTapTalk()">🎙 TAP</button>
-            <button class="voice-btn" id="newChatBtn" onclick="newChat()" title="Clear all messages — start fresh" style="border-color:var(--red);color:var(--red);opacity:0.75;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">🗑 NEW</button>
-          </div>
-          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="voice-controls" id="voiceControlsRow">
+        <button class="voice-btn" id="tapTalkBtn" onclick="toggleTapTalk()">🎙 TAP</button>
+        <button class="voice-btn" id="newChatBtn" onclick="newChat()" title="Clear all messages — start fresh" style="border-color:var(--red);color:var(--red);opacity:0.75;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">🗑 NEW</button>
       </div>
       <div class="input-hint">🎙 TAP = record · Say "add task X" · "delete task X" · "note: X" · "delete notes X" · "remind me at 3pm X" · 🗑 NEW = clear chat · 💾 SAVE CHAT = export · ENTER = send</div>
     </div>
@@ -1634,6 +1641,22 @@ function updateVisionPanel() {
   document.getElementById('visionPanel').style.display = has?'block':'none';
   document.getElementById('visionStatusText').textContent = has ? [cameraStream?'camera':'',screenStream?'screen':''].filter(Boolean).join(' + ')+' active' : '';
 }
+// ── Keep the floating camera/screen preview mic buttons in sync with the
+// real TAP state. They call the exact same toggleTapTalk() function as the
+// main TAP button and the FLOAT PiP mic, so recording/permissions/whisper
+// logic all stays in one place — this just mirrors the visual state onto them.
+setInterval(() => {
+  const speaking = typeof isSpeaking !== 'undefined' && isSpeaking;
+  const recording = typeof isTapRecording !== 'undefined' && isTapRecording;
+  const label = speaking ? '🔊 SPEAKING' : (recording ? '🔴 STOP' : '🎙 TALK');
+  const cls = 'preview-mic-btn' + (recording && !speaking ? ' recording' : '');
+  ['camMicBtn','scrMicBtn'].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.textContent = label;
+    b.className = cls;
+  });
+}, 300);
 function captureFrame(videoEl) {
   try {
     const c = document.createElement('canvas');
@@ -2848,7 +2871,7 @@ function showTyping() {
 }
 function removeTyping() { document.getElementById('typingIndicator')?.remove(); }
 function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
-function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,160)+'px'; }
 
 // ============================================================
 //  TASKS
