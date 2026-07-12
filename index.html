@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Permissions-Policy" content="microphone=*">
@@ -60,7 +59,7 @@
   #cameraPreviewWrap{bottom:90px;right:260px;width:160px;border-color:var(--green);box-shadow:0 0 12px rgba(0,255,136,0.3);}
   #screenPreviewWrap{bottom:230px;right:260px;width:200px;border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,0.3);}
   /* ★ FIX: drag handle so you can move the preview by its header */
-  .preview-handle{display:flex;align-items:center;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.8);cursor:grab;height:22px;flex-shrink:0;user-select:none;}
+  .preview-handle{display:flex;align-items:center;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.8);cursor:grab;height:22px;flex-shrink:0;user-select:none;touch-action:none;}
   .preview-handle:active{cursor:grabbing;}
   .preview-label{font-family:'Orbitron',monospace;font-size:0.42rem;letter-spacing:0.08em;padding:1px 4px;border-radius:2px;}
   #cameraPreviewWrap .preview-label{color:var(--green);}
@@ -69,7 +68,17 @@
   .preview-video{width:100%;height:110px;object-fit:cover;display:block;pointer-events:none;}/* pointer-events:none prevents video from eating mouse events */
 
   /* MAIN */
-  .main{flex:1;display:flex;overflow:hidden;position:relative;z-index:1;}
+  .main{flex:1;display:flex;overflow:hidden;position:relative;}
+  /* ★ FIX: .main used to have z-index:1, which — because position:relative +
+     z-index != auto creates a new stacking context — trapped its fixed-position
+     mobile drawers (.panel-left/.panel-right, z-index:250) inside a context
+     capped at level 1. The drawer-backdrop (z-index:240, a direct child of
+     <body>) then rendered ABOVE the drawer for hit-testing purposes even
+     though the drawer looked visually on top, so every tap inside the task
+     drawer (checkbox, +, delete, inputs) actually landed on the backdrop and
+     closed the drawer instead of doing anything. Dropping the z-index here
+     lets .panel-left/.panel-right compare directly against the backdrop at
+     the document root, where 250 > 240 correctly wins. */
 
   /* LEFT PANEL */
   .panel-left{width:245px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:rgba(0,8,20,0.6);backdrop-filter:blur(5px);overflow-y:auto;}
@@ -146,6 +155,10 @@
   @keyframes typingBounce{0%,100%{transform:translateY(0);opacity:0.3}50%{transform:translateY(-4px);opacity:1}}
   .chat-input-area{padding:11px 16px;border-top:1px solid var(--border);background:rgba(0,5,15,0.7);flex-shrink:0;}
   .input-row{display:flex;gap:7px;align-items:flex-end;}
+  /* On desktop the actions row is just a passthrough wrapper so voice-controls + send-btn
+     sit inline with the textarea exactly as before. On mobile (below) it becomes its own
+     full-width row so the textarea never gets squeezed down to nothing. */
+  .input-actions-row{display:contents;}
   .chat-input{flex:1;background:rgba(0,15,35,0.8);border:1px solid var(--border);color:var(--text);font-family:'Exo 2',sans-serif;font-size:0.82rem;padding:9px 12px;outline:none;resize:none;min-height:40px;max-height:100px;transition:border-color 0.2s;line-height:1.5;}
   .chat-input:focus{border-color:var(--arc);box-shadow:0 0 8px rgba(0,212,255,0.1);}
   .chat-input::placeholder{color:var(--text-dim);}
@@ -532,15 +545,37 @@
   @media(max-width:620px){
     html,body{overflow-x:hidden;}
 
-    /* Topbar: wrap into two rows, shrink everything, keep it usable */
+    /* Declutter: decorative scan-line/corner brackets eat visual space and
+       add noise on a small screen — hide them so the UI feels less busy. */
+    .scan-line, .corner-dec{display:none;}
+
+    /* Topbar: wrap into rows, shrink everything, keep it usable.
+       ★ FIX: row 1 = [☰ hamburger] — [A.N.N.A logo, centered] — [📊 stats toggle],
+       everything else (CONFIG/CREATE/CREDITS, CAMERA/SCREEN/FLOAT) wraps to
+       its own full-width row below instead of shoving the logo off to one side. */
     .topbar{padding:8px 10px;gap:6px;flex-wrap:wrap;}
-    .logo{font-size:0.92rem;letter-spacing:0.18em;gap:6px;}
+    .logo{font-size:0.92rem;letter-spacing:0.18em;gap:6px;order:2;flex:1;justify-content:center;text-align:center;}
     .arc-reactor{width:24px;height:24px;}
-    .topbar-center{order:3;width:100%;justify-content:flex-start;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+    #btnToggleLeft{order:1;}
+    #btnToggleRight{order:3;}
+    .topbar-center{order:5;width:100%;justify-content:flex-start;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
     .monitor-btn{font-size:0.5rem;padding:5px 8px;flex-shrink:0;}
-    .topbar-right{gap:5px;}
+    .topbar-right{order:4;width:100%;justify-content:flex-start;flex-wrap:wrap;gap:5px;}
     .status-bar{display:none;}
     .api-setup-btn{font-size:0.5rem;padding:5px 7px;}
+
+    /* Chat header: compact, single row */
+    .chat-header{padding:8px 12px;}
+    .chat-header-title{font-size:0.55rem;letter-spacing:0.12em;}
+    .mode-tabs{gap:3px;}
+    .mode-tab{padding:5px 8px;font-size:0.48rem;}
+
+    /* Chat area: more breathing room, bigger readable text, wider bubbles */
+    .chat-messages{padding:14px 12px;gap:14px;}
+    .msg{max-width:94%;gap:8px;}
+    .msg-avatar{width:24px;height:24px;font-size:0.5rem;}
+    .msg-bubble{font-size:0.86rem;line-height:1.65;padding:10px 12px;}
+    .msg-name{font-size:0.48rem;margin-bottom:4px;}
 
     /* Hamburger buttons to open the Tasks/Notes and Session/Memory panels as drawers */
     .panel-toggle-btn{
@@ -579,20 +614,27 @@
     }
     .drawer-backdrop.show{background:rgba(0,0,0,0.55); pointer-events:auto;}
 
-    /* Chat input dock: bigger tap targets, no iOS auto-zoom, safe-area padding */
+    /* Chat input dock: bigger tap targets, no iOS auto-zoom, safe-area padding.
+       ★ FIX: the textarea was sharing one row with 3+ buttons (TAP/ALWAYS ON/NEW/SEND),
+       which squeezed it down to almost no width on narrow phones — sometimes invisible.
+       Now the textarea gets its own full-width row, and the buttons drop to a second
+       row underneath, so the input is always fully visible and easy to tap. */
     .chat-input-area{padding:8px 10px calc(8px + env(safe-area-inset-bottom));}
-    .chat-input{font-size:16px;padding:8px 10px;}
-    .voice-controls{flex-wrap:wrap;gap:4px;}
-    .voice-btn{height:36px;font-size:0.5rem;padding:0 8px;}
-    .send-btn{width:36px;height:36px;}
-    .input-hint{font-size:0.48rem;line-height:1.4;white-space:normal;}
+    .input-row{flex-direction:column;align-items:stretch;gap:8px;}
+    .chat-input{font-size:16px;padding:10px 12px;line-height:1.5;width:100%;min-height:44px;}
+    .input-actions-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;}
+    .voice-controls{flex:1;flex-wrap:nowrap;gap:6px;}
+    .voice-btn{height:40px;font-size:0.56rem;padding:0 10px;flex:1;justify-content:center;}
+    .send-btn{width:44px;height:40px;flex-shrink:0;}
+    .input-hint{font-size:0.5rem;line-height:1.5;white-space:normal;margin-top:6px;}
     .mode-tabs{flex-wrap:wrap;}
 
     /* Floating camera/screen previews: smaller & repositioned so they never
        cover the chat input or the on-screen keyboard */
-    #cameraPreviewWrap{right:8px;bottom:150px;width:96px;}
-    #screenPreviewWrap{right:8px;bottom:255px;width:120px;}
-    .preview-video{height:64px;}
+    #cameraPreviewWrap{right:8px;bottom:150px;width:100px;}
+    #screenPreviewWrap{right:8px;bottom:255px;width:124px;}
+    .preview-video{height:68px;}
+    .preview-handle{height:26px;}
 
     .mic-banner{font-size:0.6rem;padding:8px 10px;flex-wrap:wrap;gap:8px;}
     #reminderToast{min-width:auto;width:88vw;font-size:0.65rem;}
@@ -600,6 +642,17 @@
 
     .avatar-ring{width:70px;height:70px;}
     .side-section{padding:10px;}
+
+    /* ★ FIX: task-check / task-del / sched-del hit boxes were ~10px — far too
+       small to tap reliably on a phone, which is why "delete" felt broken.
+       Give them real touch targets and kill the tap-delay/double-fire quirk. */
+    .task-item{padding:8px 7px;}
+    .task-check{width:22px;height:22px;font-size:0.75rem;touch-action:manipulation;}
+    .task-del{min-width:32px;min-height:32px;font-size:1rem;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+    .sched-item{padding:7px 7px;}
+    .sched-del{min-width:32px;min-height:32px;font-size:1rem;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+    .mini-btn{min-width:38px;min-height:38px;touch-action:manipulation;}
+    .panel-toggle-btn,.api-setup-btn,.monitor-btn,.voice-btn{touch-action:manipulation;}
   }
 
   @media(max-width:400px){
@@ -857,36 +910,6 @@
   </div>
 </div>
 
-<!-- ══════════════════ WAKE WORD MODAL ══════════════════ -->
-<div class="chat-save-modal" id="wakeWordModal">
-  <div class="chat-save-box" style="width:480px;max-width:95vw;">
-    <div class="chat-save-title">🎙 SET YOUR WAKE WORD</div>
-    <div class="chat-save-sub">// Like "Hey Google" — ANNA wakes when she hears this</div>
-    <div style="background:rgba(0,212,255,0.05);border:1px solid var(--border);padding:12px;margin-bottom:18px;font-family:'Share Tech Mono',monospace;font-size:0.6rem;line-height:1.7;color:var(--text-dim)">
-      <span style="color:var(--arc)">// EXAMPLES:</span> "hey anna" · "anna" · "anna babe" · "hey girl" · anything you like<br>
-      <span style="color:var(--arc)">// HOW IT WORKS:</span> Say your wake word anytime — ANNA responds even in float mode<br>
-      <span style="color:var(--gold)">// TIP:</span> Short distinct phrases work best
-    </div>
-    <div class="form-group" style="margin-bottom:14px">
-      <label class="form-label">TYPE YOUR WAKE WORD(S)</label>
-      <input class="form-input" id="wakeWordInput" type="text" placeholder="e.g. hey anna, anna babe, anna..." style="margin-bottom:4px">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim)">Separate multiple wake words with commas</div>
-    </div>
-    <div style="margin-bottom:18px">
-      <label class="form-label">OR RECORD BY VOICE</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn-primary" id="wakeWordRecordBtn" onclick="recordWakeWord()" style="flex:none;padding:9px 14px;font-size:0.58rem">🎙 TAP &amp; SPEAK</button>
-        <div id="wakeWordRecordStatus" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim)">Tap button, say your wake word clearly</div>
-      </div>
-    </div>
-    <div id="wakeWordPreview" style="display:none;background:rgba(0,255,136,0.06);border:1px solid var(--green);padding:10px;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--green);border-radius:4px"></div>
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveWakeWord()">✓ SAVE WAKE WORD</button>
-      <button class="btn-secondary" onclick="closeWakeWord()">CANCEL</button>
-    </div>
-  </div>
-</div>
-
 <!-- ══════════════════ FILE VIEWER MODAL ══════════════════ -->
 <div class="chat-save-modal" id="fileViewerModal">
   <div class="chat-save-box" style="width:700px;max-width:96vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;padding:20px;">
@@ -956,6 +979,7 @@
 <div class="floating-preview" id="cameraPreviewWrap">
   <div class="preview-handle" id="camHandle">
     <span class="preview-label">📷 CAMERA — drag here</span>
+    <button class="preview-close" id="camSwitchBtn" onclick="switchCamera()" title="Switch front/back camera" style="margin-right:4px;background:rgba(0,212,255,0.75);">🔄</button>
     <button class="preview-close" onclick="toggleCamera()">✕</button>
   </div>
   <video class="preview-video" id="cameraVideo" autoplay muted playsinline></video>
@@ -985,7 +1009,6 @@
       <div class="status-item"><div class="status-dot gold" id="screenDot" style="opacity:0.3"></div>SCR</div>
     </div>
     <button class="api-setup-btn" onclick="openModal()">⚙ CONFIG</button>
-    <button class="api-setup-btn" onclick="openWakeWord()" style="border-color:var(--green);color:var(--green)" title="Set your Hey Anna wake word">🎙 WAKE</button>
     <button class="api-setup-btn" onclick="openFileCreator()" style="border-color:var(--gold);color:var(--gold)" title="Create a new file">✨ CREATE</button>
     <button class="api-setup-btn" onclick="toggleCredits()" style="border-color:var(--gold);color:var(--gold)">🤖 CREDITS</button>
   </div>
@@ -1050,16 +1073,17 @@
     <div class="chat-input-area">
       <div class="input-row">
         <textarea class="chat-input" id="chatInput" placeholder="Type or speak to ANNA..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <div class="voice-controls">
-          <button class="voice-btn" id="tapTalkBtn" onclick="toggleTapTalk()">🎙 TAP</button>
-          <button class="voice-btn" id="alwaysOnBtn" onclick="toggleAlwaysOn()">👂 ALWAYS ON</button>
-          <button class="voice-btn" id="newChatBtn" onclick="newChat()" title="Clear all messages — start fresh" style="border-color:var(--red);color:var(--red);opacity:0.75;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">🗑 NEW</button>
+        <div class="input-actions-row">
+          <div class="voice-controls">
+            <button class="voice-btn" id="tapTalkBtn" onclick="toggleTapTalk()">🎙 TAP</button>
+            <button class="voice-btn" id="newChatBtn" onclick="newChat()" title="Clear all messages — start fresh" style="border-color:var(--red);color:var(--red);opacity:0.75;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">🗑 NEW</button>
+          </div>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
         </div>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
       </div>
-      <div class="input-hint">🎙 TAP = record · 👂 ALWAYS ON = hands-free · Say "add task X" · "note: X" · "remind me at 3pm X" · 🗑 NEW = clear chat · 💾 SAVE CHAT = export · ENTER = send</div>
+      <div class="input-hint">🎙 TAP = record · Say "add task X" · "delete task X" · "note: X" · "delete notes X" · "remind me at 3pm X" · 🗑 NEW = clear chat · 💾 SAVE CHAT = export · ENTER = send</div>
     </div>
   </div>
 
@@ -1152,7 +1176,7 @@
       </div>
       <div id="micTestResult" style="font-family:'Share Tech Mono',monospace;font-size:0.58rem;margin-top:5px;min-height:16px;"></div>
     </div>
-      <span style="color:var(--arc)">// VOICE COMMANDS:</span> "add task X" · "note: X" · "remind me at 3pm to X" · "open youtube" · "play X on youtube" · "search for X" · "open github" · "what time is it"<br>
+      <span style="color:var(--arc)">// VOICE COMMANDS:</span> "add task X" · "delete task X" · "complete task X" · "edit task X to Y" · "note: X" · "delete notes X" · "clear notes" · "remind me at 3pm to X" · "delete event X" · "edit event X to Y" · "open youtube" · "play X on youtube" · "search for X" · "open github" · "what time is it"<br>
       <span style="color:var(--arc)">// MEMORY:</span> All chats, tasks, schedule, notes saved permanently in browser<br>
       <span style="color:var(--arc)">// INTERRUPT:</span> Speak while ANNA talks — she stops and listens instantly<br>
       <span style="color:var(--arc)">// FLOAT:</span> Click 📌 FLOAT to keep ANNA visible on all other tabs<br>
@@ -1410,27 +1434,11 @@ async function init() {
     addSystemMsg('🎙 Microphone ready.');
     prewarmTapSR(); // pre-warm SR so first TAP fires instantly
     startMicKeepalive(); // keep mic alive — prevents repeated permission prompts
-    startClapDetector();  // 👏 double-clap toggles hands-free
+    startClapDetector();  // 👏 double-clap = quick tap-to-talk shortcut
 
-    // Restore always-on state from last session
-    // ★ FIX: only auto-resume if the user EXPLICITLY turned it on before (savedAO === true).
-    // Previously this checked `savedAO !== false`, which is true for null/undefined too —
-    // meaning brand-new users (nothing saved yet) got Always On turned on automatically
-    // without ever clicking the button. Now it stays off until the user opts in.
-    const savedAO = await dbGet('alwaysOnEnabled');
-    if (savedAO === true) {
-      // Update button to show it will be active
-      updateAlwaysOnBtn(true);
-      // Start after a 2.5s delay — ensures page is "active" and mic fully ready
-      setTimeout(() => {
-        if (micStream && !isSpeaking) {
-          startAlwaysOn();
-        }
-      }, 2500);
-    } else {
-      updateAlwaysOnBtn(false);
-      addSystemMsg('Hands-free OFF. Click 👂 ALWAYS ON to enable voice, or 🎙 TAP to speak.');
-    }
+    // ★ REMOVED: "Always On" hands-free continuous-listening mode & its button.
+    // Voice input is now TAP-to-talk only (plus the float-mode mic button below).
+    addSystemMsg('🎙 Tap the TAP button (or double-clap) anytime to speak to ANNA.');
   } catch(e) {
     document.getElementById('micBanner').classList.remove('hidden');
     addSystemMsg('⚠ Mic not available. Click ALLOW MIC above to enable voice features.');
@@ -1491,6 +1499,8 @@ setInterval(updateClock, 1000);
 // ============================================================
 //  CAMERA / SCREEN
 // ============================================================
+let currentFacingMode = 'user'; // ★ tracks front('user')/back('environment') camera for switchCamera()
+
 async function toggleCamera() {
   const btn = document.getElementById('cameraBtn');
   const wrap = document.getElementById('cameraPreviewWrap');
@@ -1505,7 +1515,7 @@ async function toggleCamera() {
   } else {
     try {
       cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 320, height: 240, facingMode: 'user' }
+        video: { width: 320, height: 240, facingMode: currentFacingMode }
       });
       const videoEl = document.getElementById('cameraVideo');
       videoEl.srcObject = cameraStream;
@@ -1544,6 +1554,36 @@ async function toggleCamera() {
     } catch(e) { addSystemMsg('Camera access denied: ' + e.message); }
   }
 }
+
+// ★ Switch between front ('user') and back ('environment') camera — mainly useful on phones.
+async function switchCamera() {
+  if (!cameraStream) { addSystemMsg('Turn the camera on first, then you can switch it.'); return; }
+  currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+  const videoEl = document.getElementById('cameraVideo');
+  try {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 320, height: 240, facingMode: currentFacingMode }
+    });
+    videoEl.srcObject = cameraStream;
+    videoEl.muted = true;
+    videoEl.playsInline = true;
+    await videoEl.play().catch(() => {});
+    addSystemMsg(currentFacingMode === 'environment' ? '📷 Switched to back camera.' : '📷 Switched to front camera.');
+  } catch(e) {
+    // Some devices/laptops only have one camera — fall back gracefully
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user'; // revert
+    addSystemMsg('Could not switch camera — this device may only have one.');
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: currentFacingMode } });
+      videoEl.srcObject = cameraStream;
+      await videoEl.play().catch(() => {});
+    } catch(e2) {}
+  }
+}
+function screenShareSupported() {
+  return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+}
 async function toggleScreen() {
   const btn = document.getElementById('screenBtn');
   const wrap = document.getElementById('screenPreviewWrap');
@@ -1554,25 +1594,39 @@ async function toggleScreen() {
     document.getElementById('screenStatus').textContent='OFF';
     document.getElementById('screenStatus').style.color='';
     updateVisionPanel();
-  } else {
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:1}});
-      document.getElementById('screenVideo').srcObject = screenStream;
-      wrap.style.display='flex'; btn.classList.add('active-screen');
-      document.getElementById('screenDot').style.opacity='1';
-      document.getElementById('screenStatus').textContent='ON';
-      document.getElementById('screenStatus').style.color='var(--gold)';
+    return;
+  }
+  // ★ FIX: most mobile browsers (iOS Safari, mobile Chrome/Firefox) don't implement
+  // getDisplayMedia at all — clicking SCREEN there used to silently fail with a
+  // generic "cancelled" message. Detect this up front and explain clearly instead.
+  if (!screenShareSupported()) {
+    addSystemMsg('⚠ Screen sharing isn\'t supported on this browser/device. Try Chrome or Edge on a desktop computer instead.');
+    return;
+  }
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:1}, audio:false});
+    document.getElementById('screenVideo').srcObject = screenStream;
+    wrap.style.display='flex'; btn.classList.add('active-screen');
+    document.getElementById('screenDot').style.opacity='1';
+    document.getElementById('screenStatus').textContent='ON';
+    document.getElementById('screenStatus').style.color='var(--gold)';
+    updateVisionPanel();
+    addSystemMsg('Screen monitoring ON.');
+    fridaySpeak('Screen monitoring active. I can see your display.');
+    screenStream.getTracks()[0].onended = () => {
+      screenStream=null; wrap.style.display='none'; btn.classList.remove('active-screen');
+      document.getElementById('screenDot').style.opacity='0.3';
+      document.getElementById('screenStatus').textContent='OFF';
+      document.getElementById('screenStatus').style.color='';
       updateVisionPanel();
-      addSystemMsg('Screen monitoring ON.');
-      fridaySpeak('Screen monitoring active. I can see your display.');
-      screenStream.getTracks()[0].onended = () => {
-        screenStream=null; wrap.style.display='none'; btn.classList.remove('active-screen');
-        document.getElementById('screenDot').style.opacity='0.3';
-        document.getElementById('screenStatus').textContent='OFF';
-        document.getElementById('screenStatus').style.color='';
-        updateVisionPanel();
-      };
-    } catch(e) { addSystemMsg('Screen share cancelled.'); }
+    };
+  } catch(e) {
+    // ★ FIX: give a specific reason instead of always saying "cancelled" —
+    // makes it clear whether the user backed out or something actually broke.
+    if (e.name === 'NotAllowedError') addSystemMsg('Screen share permission denied.');
+    else if (e.name === 'NotFoundError') addSystemMsg('No screen/window available to share.');
+    else if (e.name === 'AbortError') addSystemMsg('Screen share cancelled.');
+    else addSystemMsg('Screen share failed: ' + (e.message || e.name || 'unknown error'));
   }
 }
 function updateVisionPanel() {
@@ -1601,24 +1655,61 @@ function initDraggable() {
   makeDraggable(document.getElementById('cameraPreviewWrap'), document.getElementById('camHandle'));
   makeDraggable(document.getElementById('screenPreviewWrap'), document.getElementById('scrHandle'));
 }
+// Hide the SCREEN button entirely on devices that can't screen-share (most phones) —
+// avoids a dead button that always fails, and reduces mobile topbar clutter.
+(function hideScreenBtnIfUnsupported() {
+  if (typeof screenShareSupported === 'function' && !screenShareSupported()) {
+    const btn = document.getElementById('screenBtn');
+    if (btn) btn.style.display = 'none';
+  }
+})();
 function makeDraggable(el, handle) {
   if (!el || !handle) return;
   let drag=false, sx, sy, ox, oy;
-  handle.addEventListener('mousedown', e => {
-    if (e.target.tagName==='BUTTON') return; // don't drag on close button
-    e.preventDefault();
-    drag=true; sx=e.clientX; sy=e.clientY;
+
+  const start = (x, y, target) => {
+    if (target && target.tagName==='BUTTON') return false; // don't drag on close/switch buttons
+    drag=true; sx=x; sy=y;
     const r = el.getBoundingClientRect(); ox=r.left; oy=r.top;
     el.style.right='auto'; el.style.bottom='auto';
     el.style.left=ox+'px'; el.style.top=oy+'px';
     handle.style.cursor='grabbing';
-  });
-  document.addEventListener('mousemove', e => {
+    return true;
+  };
+  const move = (x, y) => {
     if (!drag) return;
-    el.style.left=(ox+e.clientX-sx)+'px';
-    el.style.top=(oy+e.clientY-sy)+'px';
+    // ★ FIX: clamp within the viewport so the window can never be dragged
+    // off-screen and become unreachable — important on small mobile screens.
+    const maxLeft = window.innerWidth - el.offsetWidth - 4;
+    const maxTop = window.innerHeight - el.offsetHeight - 4;
+    let nl = ox+x-sx, nt = oy+y-sy;
+    nl = Math.max(4, Math.min(maxLeft, nl));
+    nt = Math.max(4, Math.min(maxTop, nt));
+    el.style.left = nl+'px';
+    el.style.top = nt+'px';
+  };
+  const end = () => { drag=false; handle.style.cursor='grab'; };
+
+  // Mouse (desktop)
+  handle.addEventListener('mousedown', e => {
+    if (!start(e.clientX, e.clientY, e.target)) return;
+    e.preventDefault();
   });
-  document.addEventListener('mouseup', () => { drag=false; handle.style.cursor='grab'; });
+  document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+  document.addEventListener('mouseup', end);
+
+  // Touch (mobile) — lets the user drag the floating camera/screen window with a finger
+  handle.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    if (!start(t.clientX, t.clientY, e.target)) return;
+  }, {passive:true});
+  document.addEventListener('touchmove', e => {
+    if (!drag) return;
+    const t = e.touches[0];
+    move(t.clientX, t.clientY);
+  }, {passive:true});
+  document.addEventListener('touchend', end);
+  document.addEventListener('touchcancel', end);
 }
 
 // ============================================================
@@ -1643,7 +1734,14 @@ window.srPermBlocked = false; // true if SR gave not-allowed — stay on Whisper
 //  Listens for two sharp amplitude spikes within 800ms.
 // ============================================================
 let _clapCtx = null, _clapTimer = null, _lastClapTime = 0, _clapCount = 0;
+// ★ FIX: the double-clap listener below used to auto-trigger toggleTapTalk()
+// on any two loud sound spikes it picked up from the mic (background noise,
+// handling the phone, echo from ANNA's own voice, etc). That's what was
+// causing TAP to "turn on by itself" repeatedly. Per request, TAP must now
+// ONLY start when the 🎙 TAP button is actually tapped — so this listener is
+// disabled. (Left in place, functions intact, in case it's wanted again later.)
 function startClapDetector() {
+  return; // disabled — TAP now only activates from an explicit button tap
   if (_clapCtx || !micStream) return;
   try {
     _clapCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1664,10 +1762,10 @@ function startClapDetector() {
           // Rising edge = new clap detected
           const now = Date.now();
           if (now - _lastClapTime < 800) {
-            // Second clap within 800ms → double-clap!
+            // Second clap within 800ms → double-clap! (quick hands-free shortcut for TAP-to-talk)
             _clapCount = 0; _lastClapTime = 0;
             clearTimeout(_clapTimer);
-            toggleAlwaysOn();
+            toggleTapTalk();
           } else {
             _clapCount = 1; _lastClapTime = now;
             // Reset if no second clap within 800ms
@@ -1909,31 +2007,13 @@ function forceRestartListening() {
   _restartSR(200);
 }
 
-function updateAlwaysOnBtn(on) {
-  const btn = document.getElementById('alwaysOnBtn');
-  if (!btn) return;
-  btn.classList.toggle('always-on', on);
-  btn.textContent = on ? '🟢 ALWAYS ON' : '👂 ALWAYS ON';
-}
-
-function startAlwaysOn() {
-  isAlwaysOn = true;
-  window.srActive = false;
-  dbSet('alwaysOnEnabled', true);
-  addSystemMsg('👂 Hands-free ON — speak naturally, I am listening.');
-  setTimeout(startListening, 400);
-}
-
-function toggleAlwaysOn() {
-  if (isAlwaysOn) {
-    stopListening();
-    dbSet('alwaysOnEnabled', false);
-    addSystemMsg('Hands-free OFF. Use 🎙 TAP to speak.');
-  } else {
-    startAlwaysOn();
-    fridaySpeak('Hands-free mode on. Speak naturally anytime.');
-  }
-}
+// ★ REMOVED FEATURE: "Always On" continuous hands-free listening + its button.
+// These stubs are kept only because a couple of internal call sites still
+// reference them defensively (e.g. if SpeechRecognition permission is denied);
+// they now simply do nothing instead of enabling the old always-listening mode.
+function updateAlwaysOnBtn(on) { /* button removed — no-op */ }
+function startAlwaysOn() { /* feature removed — TAP-to-talk only now */ }
+function toggleAlwaysOn() { /* feature removed — use toggleTapTalk() instead */ }
 
 function pauseRecognition() {
   if (window.srRecognition) { try { window.srRecognition.abort(); } catch(e) {} }
@@ -2015,6 +2095,7 @@ function stopInterruptMonitor() {
 }
 function interruptSpeech() {
   if (!isSpeaking) return;
+  if (window._ttsKeepAliveTimer) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; }
   speechSynthesis.cancel(); ttsQueue = []; isSpeaking = false;
   animateVoiceBars(false); stopInterruptMonitor();
   setStatus('always-on', '👂 LISTENING...');
@@ -2057,10 +2138,18 @@ function cleanForSpeech(text) {
     .replace(/<[^>]+>/g,'').replace(/\[(?:OPEN|SEARCH|YOUTUBE|SCROLL):[^\]]+\]/g,'')
     .replace(/\n+/g,' ').trim().substring(0,600);
 }
-// ★ FIX: Split into sentences to eliminate TTS buffering/pause
+// ★ FIX: Split into sentences to eliminate TTS buffering/pause.
+// BUG FIXED: the old regex only matched chunks ending in . ! ? … — any trailing
+// text with NO terminating punctuation (very common: AI replies often end without
+// a period, or end with a colon/dash/emoji) was silently thrown away, which is
+// why speech would stop right before the end of a reply. Now we always capture
+// whatever text is left over after the last punctuated sentence.
 function splitSentences(text) {
-  const parts = text.match(/[^.!?…]+[.!?…]+/g) || [text];
-  return parts.map(s=>s.trim()).filter(s=>s.length>2);
+  const parts = text.match(/[^.!?…]+[.!?…]+/g) || [];
+  const matchedLen = parts.join('').length;
+  const remainder = text.slice(matchedLen).trim();
+  if (remainder) parts.push(remainder);
+  return parts.map(s=>s.trim()).filter(s=>s.length>0);
 }
 async function fridaySpeak(rawText) {
   const text = cleanForSpeech(rawText);
@@ -2093,6 +2182,16 @@ function processTTSQueue() {
 }
 
 function speakWithBrowser(text) {
+  // ★ FIX: the Chrome keep-alive workaround below (pause/resume every 8s to stop
+  // long utterances auto-cutting off) was never cleared when speech finished —
+  // only when its own tick happened to notice speaking had stopped. Since a new
+  // queued sentence usually starts speaking before that check fires, the OLD
+  // timer kept running and calling pause()/resume() on the NEW utterance. With
+  // several short queued sentences, multiple of these timers stacked up and
+  // randomly paused/resumed the current utterance, which is what caused speech
+  // to stop abruptly before finishing. Now there is only ever ONE keep-alive
+  // timer, and it's explicitly cleared the moment an utterance ends or errors.
+  if (window._ttsKeepAliveTimer) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; }
   speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = 'en-US';
@@ -2101,16 +2200,26 @@ function speakWithBrowser(text) {
   utt.volume = 1.0;
   const voice = pickBestVoice();
   if (voice) utt.voice = voice;
-  utt.onend = () => { if (isSpeaking) processTTSQueue(); };
+  utt.onend = () => {
+    if (window._ttsKeepAliveTimer) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; }
+    if (isSpeaking) processTTSQueue();
+  };
   utt.onerror = e => {
+    if (window._ttsKeepAliveTimer) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; }
     if (e.error !== 'interrupted' && e.error !== 'canceled') processTTSQueue();
   };
-  // Chrome/Edge long-speech keep-alive fix
-  const fix = setInterval(() => {
-    if (!speechSynthesis.speaking) { clearInterval(fix); return; }
-    speechSynthesis.pause();
-    speechSynthesis.resume();
-  }, 8000);
+  // Chrome/Edge (desktop) long-speech keep-alive fix — single instance, always cleaned up above.
+  // ★ FIX: on mobile (especially iOS Safari) calling pause()/resume() on speechSynthesis
+  // frequently kills the utterance instead of resuming it — this was a second cause of
+  // speech stopping abruptly before finishing. Only run this workaround on desktop, where
+  // it's needed and safe; mobile browsers don't have the long-utterance cutoff bug it fixes.
+  if (!isMobileDevice) {
+    window._ttsKeepAliveTimer = setInterval(() => {
+      if (!speechSynthesis.speaking) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; return; }
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+    }, 8000);
+  }
   speechSynthesis.speak(utt);
 }
 function animateVoiceBars(active) {
@@ -2319,7 +2428,10 @@ IMPORTANT RULES:
 - "open file explorer/this PC" → tell them to press Windows+E (browser security)
 - "open [any app]" you can't launch → explain and offer web alternative
 - "add task X" → confirm and add it (system does it automatically)
+- "delete/remove/cancel task X", "complete task X", "edit task X to Y" → system handles it automatically, just confirm naturally if asked whether you can
 - "note: X" → confirm and add it (system does it automatically)
+- "delete/remove notes X", "clear notes" → system handles it automatically
+- "delete/remove event X", "edit event X to Y" → system handles it automatically
 
 STYLE: Short = 1-2 sentences. Detailed when needed. Always human, warm, natural.`;
 };
@@ -2437,6 +2549,113 @@ async function sendMessage() {
         addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
         return;
       }
+    }
+
+    // ─── VOICE TASK DELETE / COMPLETE / EDIT COMMANDS ───
+    let mEdit = text.match(/^(?:edit|update|change|rename)\s+(?:the\s+)?tasks?\s+["']?(.+?)["']?\s+to\s+["']?(.+?)["']?$/i);
+    if (mEdit) {
+      const idx = findTaskIndex(mEdit[1]);
+      if (idx > -1) {
+        const oldText = tasks[idx].text;
+        tasks[idx].text = mEdit[2].trim();
+        saveTasks(); renderTasks(); updateMetrics();
+        const conf = `Updated task "${oldText}" to "${tasks[idx].text}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      } else {
+        const conf = `I couldn't find a task matching "${mEdit[1]}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      }
+      return;
+    }
+    let mDelTask = text.match(/^(?:delete|remove|cancel|clear)\s+(?:the\s+)?tasks?[:\s]+(.+)/i);
+    if (mDelTask) {
+      const idx = findTaskIndex(mDelTask[1]);
+      if (idx > -1) {
+        const removed = tasks[idx].text;
+        tasks.splice(idx, 1); saveTasks(); renderTasks(); updateMetrics();
+        const conf = `Deleted task: "${removed}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      } else {
+        const conf = `I couldn't find a task matching "${mDelTask[1]}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      }
+      return;
+    }
+    let mDoneTask = text.match(/^(?:complete|finish|done with|mark done|check off)\s+(?:the\s+)?tasks?[:\s]+(.+)/i);
+    if (mDoneTask) {
+      const idx = findTaskIndex(mDoneTask[1]);
+      if (idx > -1) {
+        tasks[idx].done = true; saveTasks(); renderTasks(); updateMetrics();
+        const conf = `Marked "${tasks[idx].text}" as complete, ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      } else {
+        const conf = `I couldn't find a task matching "${mDoneTask[1]}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      }
+      return;
+    }
+
+    // ─── VOICE SCHEDULE/EVENT DELETE COMMANDS ───
+    let mDelSched = text.match(/^(?:delete|remove|cancel|clear)\s+(?:the\s+)?(?:event|schedule|appointment|reminder)[:\s]+(.+)/i);
+    if (mDelSched) {
+      const idx = findScheduleIndex(mDelSched[1]);
+      if (idx > -1) {
+        const removed = schedule[idx].event;
+        schedule.splice(idx, 1); saveSchedule(); renderSchedule();
+        const conf = `Deleted event: "${removed}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      } else {
+        const conf = `I couldn't find an event matching "${mDelSched[1]}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      }
+      return;
+    }
+    let mEditSched = text.match(/^(?:edit|update|change|reschedule)\s+(?:the\s+)?(?:event|schedule|appointment)\s+["']?(.+?)["']?\s+to\s+["']?(.+?)["']?$/i);
+    if (mEditSched) {
+      const idx = findScheduleIndex(mEditSched[1]);
+      if (idx > -1) {
+        const oldText = schedule[idx].event;
+        // If the replacement looks like a time (e.g. "5pm" or "17:00"), update the time instead of the label
+        const timeMatch = mEditSched[2].trim().match(/^(\d{1,2}):?(\d{2})?\s*(am|pm)?$/i);
+        if (timeMatch) {
+          let h = parseInt(timeMatch[1],10), min = timeMatch[2]||'00', ap = (timeMatch[3]||'').toLowerCase();
+          if (ap==='pm' && h<12) h+=12; if (ap==='am' && h===12) h=0;
+          schedule[idx].time = String(h).padStart(2,'0')+':'+min;
+        } else {
+          schedule[idx].event = mEditSched[2].trim();
+        }
+        saveSchedule(); renderSchedule();
+        const conf = `Updated event "${oldText}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      } else {
+        const conf = `I couldn't find an event matching "${mEditSched[1]}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      }
+      return;
+    }
+
+    // ─── VOICE NOTES DELETE/CLEAR COMMANDS ───
+    if (/^(?:clear|delete|erase)\s+(?:all\s+)?notes$/i.test(lo)) {
+      document.getElementById('notesArea').value = ''; saveNotes();
+      const conf = `All notes cleared, ${config.bossName}.`;
+      addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      return;
+    }
+    let mDelNote = text.match(/^(?:delete|remove|erase)\s+(?:the\s+)?notes?\s+(?:about|containing|regarding)?\s*[:\s]?(.+)/i);
+    if (mDelNote) {
+      const area = document.getElementById('notesArea');
+      const q = mDelNote[1].trim().toLowerCase();
+      const lines = area.value.split('\n');
+      const kept = lines.filter(l => !l.toLowerCase().includes(q));
+      if (kept.length < lines.length) {
+        area.value = kept.join('\n'); saveNotes();
+        const conf = `Removed matching note(s), ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      } else {
+        const conf = `I couldn't find a note matching "${mDelNote[1]}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      }
+      return;
     }
 
     // ─── VOICE NOTE COMMANDS ───
@@ -2642,6 +2861,22 @@ function addTask() {
 }
 function toggleTask(id) { const t=tasks.find(t=>t.id===id); if(t) t.done=!t.done; saveTasks(); renderTasks(); updateMetrics(); }
 function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); saveTasks(); renderTasks(); updateMetrics(); }
+// ★ Fuzzy lookup so voice/chat commands like "delete task fix bug" can find the
+// right item without an exact match. Exact match wins first, then substring.
+function findTaskIndex(query) {
+  query = (query||'').toLowerCase().trim();
+  if (!query) return -1;
+  let idx = tasks.findIndex(t => t.text.toLowerCase() === query);
+  if (idx === -1) idx = tasks.findIndex(t => t.text.toLowerCase().includes(query));
+  return idx;
+}
+function findScheduleIndex(query) {
+  query = (query||'').toLowerCase().trim();
+  if (!query) return -1;
+  let idx = schedule.findIndex(s => s.event.toLowerCase() === query);
+  if (idx === -1) idx = schedule.findIndex(s => s.event.toLowerCase().includes(query));
+  return idx;
+}
 function saveTasks() { dbSet('anna_tasks',tasks); }
 function renderTasks() {
   const list=document.getElementById('taskList'); list.innerHTML='';
@@ -2889,28 +3124,115 @@ setInterval(()=>{
 }, 22*60*1000);
 
 // ============================================================
-//  PiP FLOATING WIDGET — shows ANNA status on all tabs
-//  Note: PiP canvas cannot have real buttons (browser limitation)
-//  TAP and ALWAYS-ON are controlled from the main window
+//  FLOATING WIDGET — ANNA visible + controllable while you do other things
+//  ★ FIX: previously this only used canvas-based video PiP, which is a
+//  browser limitation that CANNOT contain real buttons — so there was no way
+//  to actually talk to ANNA while floating. Now we first try the Document
+//  Picture-in-Picture API (Chrome/Edge 116+), which opens a real always-on-top
+//  mini window with actual interactive HTML — including a working tap-to-talk
+//  mic button. If that API isn't available, we fall back to the old
+//  status-only canvas PiP (no buttons possible there — a hard browser limit).
 // ============================================================
-async function toggleFloatingWidget() {
-  const btn = document.getElementById('pipBtn');
+let docPipWindow = null;
 
-  // If already in PiP, exit it
+async function toggleFloatingWidget() {
+  // If a Document PiP window is open, close it
+  if (docPipWindow) { docPipWindow.close(); return; }
+  // If the old-style video PiP is open, exit it
   if (document.pictureInPictureElement) {
     await document.exitPictureInPicture().catch(()=>{});
-    btn.classList.remove('active-pip');
-    btn.innerHTML = '<div class="monitor-dot"></div>📌 FLOAT';
     return;
   }
 
-  if (!document.pictureInPictureEnabled) {
-    addSystemMsg('PiP not supported in this browser. Use Chrome or Edge.');
-    return;
+  if ('documentPictureInPicture' in window) {
+    await openDocPiPWidget();
+  } else if (document.pictureInPictureEnabled) {
+    await openVideoPipWidget();
+  } else {
+    addSystemMsg('Float mode isn\'t supported in this browser. Try Chrome or Edge.');
   }
+}
 
+// ── Real floating window with a working mic button (Chrome/Edge) ──
+async function openDocPiPWidget() {
+  const btn = document.getElementById('pipBtn');
   try {
-    // Create a 240x135 canvas that acts as the "video" for PiP
+    docPipWindow = await documentPictureInPicture.requestWindow({ width: 260, height: 190 });
+
+    // Share the same visual language as the main app inside the floating window
+    const style = docPipWindow.document.createElement('style');
+    style.textContent = `
+      body{margin:0;background:#020b14;color:#c8eaf5;font-family:'Exo 2',Arial,sans-serif;
+        height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+      .pip-top{display:flex;align-items:center;gap:8px;padding:10px 12px 4px;flex-shrink:0;}
+      .pip-dot{width:8px;height:8px;border-radius:50%;background:#00d4ff;box-shadow:0 0 8px #00d4ff;animation:pipPulse 1.6s ease-in-out infinite;}
+      @keyframes pipPulse{0%,100%{opacity:0.5}50%{opacity:1}}
+      .pip-title{font-family:'Orbitron',monospace;font-weight:700;font-size:0.8rem;letter-spacing:0.12em;color:#00d4ff;}
+      .pip-status{flex:1;padding:0 12px;font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:#4a7a99;line-height:1.5;overflow-y:auto;}
+      .pip-status.speaking{color:#00ff88;} .pip-status.recording{color:#ff3c3c;}
+      .pip-mic-row{display:flex;align-items:center;justify-content:center;padding:10px 12px 14px;flex-shrink:0;}
+      .pip-mic-btn{width:100%;height:46px;background:rgba(0,212,255,0.08);border:1px solid #00d4ff;color:#00d4ff;
+        font-family:'Orbitron',monospace;font-size:0.68rem;letter-spacing:0.08em;border-radius:4px;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s;}
+      .pip-mic-btn:active{background:rgba(0,212,255,0.2);}
+      .pip-mic-btn.recording{border-color:#ff3c3c;color:#ff3c3c;background:rgba(255,60,60,0.1);animation:pipRec 1s ease-in-out infinite;}
+      @keyframes pipRec{0%,100%{box-shadow:0 0 0 0 rgba(255,60,60,0.4)}50%{box-shadow:0 0 0 6px rgba(255,60,60,0)}}
+    `;
+    docPipWindow.document.head.appendChild(style);
+
+    docPipWindow.document.body.innerHTML = `
+      <div class="pip-top"><div class="pip-dot"></div><div class="pip-title">A.N.N.A</div></div>
+      <div class="pip-status" id="pipStatusText">Floating — tap the mic to talk to me anytime.</div>
+      <div class="pip-mic-row">
+        <button class="pip-mic-btn" id="pipMicBtn">🎙 TAP TO TALK</button>
+      </div>
+    `;
+
+    const pipMicBtn = docPipWindow.document.getElementById('pipMicBtn');
+    // Calls straight back into the main window's existing tap-talk logic —
+    // Document PiP shares the same JS execution context as the opener page.
+    pipMicBtn.addEventListener('click', () => toggleTapTalk());
+
+    // Keep the floating window's mic button + status text in sync with real state
+    if (window._pipSyncTimer) clearInterval(window._pipSyncTimer);
+    window._pipSyncTimer = setInterval(() => {
+      if (!docPipWindow) { clearInterval(window._pipSyncTimer); return; }
+      const st = docPipWindow.document.getElementById('pipStatusText');
+      const mb = docPipWindow.document.getElementById('pipMicBtn');
+      if (!st || !mb) return;
+      if (isSpeaking) {
+        st.textContent = '🔊 ANNA is speaking...'; st.className = 'pip-status speaking';
+        mb.textContent = '🔊 SPEAKING'; mb.className = 'pip-mic-btn';
+      } else if (isTapRecording) {
+        st.textContent = '🎙 Listening — tap again to stop and send.'; st.className = 'pip-status recording';
+        mb.textContent = '🔴 STOP'; mb.className = 'pip-mic-btn recording';
+      } else {
+        st.textContent = 'Floating — tap the mic to talk to me anytime.'; st.className = 'pip-status';
+        mb.textContent = '🎙 TAP TO TALK'; mb.className = 'pip-mic-btn';
+      }
+    }, 300);
+
+    docPipWindow.addEventListener('pagehide', () => {
+      docPipWindow = null;
+      if (window._pipSyncTimer) { clearInterval(window._pipSyncTimer); window._pipSyncTimer = null; }
+      btn.classList.remove('active-pip');
+      btn.innerHTML = '<div class="monitor-dot"></div>📌 FLOAT';
+    });
+
+    btn.classList.add('active-pip');
+    btn.innerHTML = '<div class="monitor-dot"></div>📌 FLOATING';
+    addSystemMsg('ANNA is floating — tap the mic button in the floating window to talk, even while you use other apps/tabs.');
+  } catch(err) {
+    addSystemMsg('Float failed: ' + err.message + '. Try clicking the page first, then FLOAT.');
+    docPipWindow = null;
+  }
+}
+
+// ── Fallback: status-only canvas PiP for browsers without Document PiP ──
+// (A real browser limitation: video-element PiP cannot contain interactive buttons.)
+async function openVideoPipWidget() {
+  const btn = document.getElementById('pipBtn');
+  try {
     pipCanvas = document.createElement('canvas');
     pipCanvas.width = 240; pipCanvas.height = 135;
     drawPipFrame();
@@ -2929,7 +3251,6 @@ async function toggleFloatingWidget() {
     await pipVideoEl.play();
     await pipVideoEl.requestPictureInPicture();
 
-    // Animate frame every second
     if (pipAnimFrame) clearInterval(pipAnimFrame);
     pipAnimFrame = setInterval(drawPipFrame, 800);
 
@@ -2942,7 +3263,7 @@ async function toggleFloatingWidget() {
 
     btn.classList.add('active-pip');
     btn.innerHTML = '<div class="monitor-dot"></div>📌 FLOATING';
-    addSystemMsg('ANNA floating — visible on all tabs. Controls remain here in main window.');
+    addSystemMsg('ANNA floating — visible on all tabs. This browser can\'t show buttons in float mode, so use 🎙 TAP here in the main window to talk.');
   } catch(err) {
     addSystemMsg('Float failed: ' + err.message + '. Try clicking the page first, then FLOAT.');
     if (pipVideoEl) { pipVideoEl.remove(); pipVideoEl = null; }
@@ -2988,9 +3309,8 @@ function drawPipFrame() {
   ctx.fillStyle = 'rgba(0,212,255,0.2)'; ctx.fillRect(8, 74, W-16, 1);
 
   // Voice status
-  const listeningColor = isAlwaysOn ? '#00ff88' : '#4a7a99';
-  const listeningText = isSpeaking ? '🔊 SPEAKING' : isAlwaysOn ? (window.srRecognition ? '👂 LISTENING' : '↻ WAIT') : '• STANDBY';
-  ctx.fillStyle = isSpeaking ? '#00ff88' : listeningColor;
+  const listeningText = isSpeaking ? '🔊 SPEAKING' : isTapRecording ? '🎙 RECORDING' : '• STANDBY';
+  ctx.fillStyle = isSpeaking ? '#00ff88' : isTapRecording ? '#ff3c3c' : '#4a7a99';
   ctx.font = '9px monospace';
   ctx.fillText(listeningText, 8, 88);
 
@@ -3633,7 +3953,6 @@ document.addEventListener('DOMContentLoaded', () => {
 //  ✅ Import saved chat + continue conversation
 //  ✅ File reader (PDF/txt/image/code) + AI explanation  
 //  ✅ Email compose + Gmail integration
-//  ✅ Wake word "Anna" detection
 //  ✅ Schedule voice command fix
 //  ✅ Hands-free loop fix (never stops listening)
 //  ✅ Time from device (no offset dependency)
@@ -4146,90 +4465,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // ============================================================
-//  WAKE WORD — "Hey Anna" custom caller (like Google Assistant)
-// ============================================================
-let wakeWords = ['hey anna','anna','hi anna'];
-let wakeWordRecMR = null, wakeWordRecording = false;
-
-(function loadSavedWakeWords() {
-  try {
-    const s = localStorage.getItem('anna_wake_words');
-    if (s) { const arr = JSON.parse(s).map(w=>w.toLowerCase().trim()).filter(Boolean); if(arr.length) wakeWords=arr; }
-  } catch(e) {}
-})();
-
-function openWakeWord() {
-  document.getElementById('wakeWordInput').value = wakeWords.join(', ');
-  const p = document.getElementById('wakeWordPreview'); if(p) p.style.display='none';
-  document.getElementById('wakeWordModal').classList.add('open');
-}
-function closeWakeWord() {
-  document.getElementById('wakeWordModal').classList.remove('open');
-  if (wakeWordRecording) stopWakeWordRecord();
-}
-
-async function recordWakeWord() {
-  const btn = document.getElementById('wakeWordRecordBtn');
-  const status = document.getElementById('wakeWordRecordStatus');
-  if (wakeWordRecording) { stopWakeWordRecord(); return; }
-  try {
-    if (!micStream || !micStream.getTracks().some(t => t.readyState === 'live')) {
-      status.textContent = 'Mic not ready — use TAP first to activate mic.'; return;
-    }
-    const stream = micStream;
-    const chunks = [];
-    wakeWordRecMR = new MediaRecorder(stream);
-    wakeWordRecMR.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
-    wakeWordRecMR.onstop = async () => {
-      btn.textContent = '🎙 TAP & SPEAK'; btn.style.borderColor=''; wakeWordRecording=false;
-      status.textContent = 'Transcribing...';
-      const blob = new Blob(chunks,{type:'audio/webm'});
-      const form = new FormData();
-      form.append('file',blob,'wake.webm'); form.append('model','whisper-large-v3');
-      form.append('response_format','json'); form.append('language','en');
-      try {
-        const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions',
-          {method:'POST',headers:{'Authorization':'Bearer '+config.groqKey},body:form});
-        const d = await res.json();
-        const text = (d.text||'').trim();
-        if (text) {
-          document.getElementById('wakeWordInput').value = text;
-          const prev = document.getElementById('wakeWordPreview');
-          prev.style.display='block'; prev.textContent=`✓ Heard: "${text}" — This will be your wake word!`;
-          status.textContent=`Recorded: "${text}"`;
-        } else { status.textContent='Nothing heard — try again.'; }
-      } catch(e) { status.textContent='Transcription failed.'; }
-    };
-    wakeWordRecMR.start(); wakeWordRecording=true;
-    btn.textContent='🔴 STOP'; btn.style.borderColor='var(--red)';
-    status.textContent='Recording... tap STOP when done';
-    setTimeout(()=>{ if(wakeWordRecording) stopWakeWordRecord(); },5000);
-  } catch(e) { status.textContent='Mic access needed.'; }
-}
-function stopWakeWordRecord() {
-  if(wakeWordRecMR && wakeWordRecMR.state!=='inactive') wakeWordRecMR.stop();
-  wakeWordRecording=false;
-}
-function saveWakeWord() {
-  const val = document.getElementById('wakeWordInput').value.trim();
-  if (!val) { addSystemMsg('Please type or record your wake word first.'); return; }
-  wakeWords = val.split(',').map(w=>w.toLowerCase().trim()).filter(Boolean);
-  localStorage.setItem('anna_wake_words', JSON.stringify(wakeWords));
-  closeWakeWord();
-  const list = wakeWords.map(w=>`"${w}"`).join(', ');
-  const msg = `Wake word set! I'll respond when you say ${list}, ${config.bossName}. Works in float mode too.`;
-  addMsg('anna',msg); fridaySpeak(msg); saveChat('assistant',msg);
-}
-
-// ── Override wake word detection in the always-on loop ──
-// The existing srMR.onstop checks: /^(anna|hey anna|hi anna|anna are you there|anna hello)\.?$/i
-// We patch this by overriding the global check function:
-window._annaIsWakeOnly = function(text) {
-  const lo = text.toLowerCase().trim().replace(/\.$/,'');
-  return wakeWords.some(w => lo === w);
-};
-
-// ============================================================
 //  FILE VIEWER — open, view, voice-edit, download
 // ============================================================
 let _viewerFileName = '', _viewerExt = '', _viewerContent = '';
@@ -4566,10 +4801,6 @@ window.processFileForRead = async function(file) {
     <button class="mini-viewer-action" onclick="closeMiniViewer()">✕ Close</button>
   </div>
 </div>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
-}
-</script>
+
 </body>
 </html>
