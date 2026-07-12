@@ -58,16 +58,24 @@
   .floating-preview{position:fixed;z-index:50;border:1px solid;border-radius:4px;overflow:hidden;box-shadow:0 0 20px rgba(0,0,0,0.8);display:none;flex-direction:column;}
   #cameraPreviewWrap{bottom:90px;right:260px;width:160px;border-color:var(--green);box-shadow:0 0 12px rgba(0,255,136,0.3);}
   #screenPreviewWrap{bottom:230px;right:260px;width:200px;border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,0.3);}
+  #floatPreviewWrap{bottom:90px;right:20px;width:170px;border-color:var(--arc);box-shadow:0 0 12px rgba(0,212,255,0.35);}
   /* ★ FIX: drag handle so you can move the preview by its header */
   .preview-handle{display:flex;align-items:center;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.8);cursor:grab;height:22px;flex-shrink:0;user-select:none;touch-action:none;}
   .preview-handle:active{cursor:grabbing;}
   .preview-label{font-family:'Orbitron',monospace;font-size:0.42rem;letter-spacing:0.08em;padding:1px 4px;border-radius:2px;}
   #cameraPreviewWrap .preview-label{color:var(--green);}
   #screenPreviewWrap .preview-label{color:var(--gold);}
+  #floatPreviewWrap .preview-label{color:var(--arc);}
   .preview-close{background:rgba(255,60,60,0.75);color:#fff;border:none;width:14px;height:14px;border-radius:50%;cursor:pointer;font-size:0.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .preview-video{width:100%;height:110px;object-fit:cover;display:block;pointer-events:none;}/* pointer-events:none prevents video from eating mouse events */
+  /* Body area for the FLOAT bubble — no camera/screen feed, just a short status line
+     (mirrors the docPiP window's status text) so the box isn't empty above the TALK button */
+  .preview-float-body{width:100%;min-height:56px;padding:8px;box-sizing:border-box;background:rgba(0,20,35,0.6);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:0.5rem;line-height:1.5;display:flex;align-items:center;justify-content:center;text-align:center;}
+  .preview-float-body.speaking{color:var(--green);}
+  .preview-float-body.recording{color:#ff3c3c;}
   .preview-mic-btn{width:100%;height:26px;flex-shrink:0;background:rgba(0,212,255,0.12);border:none;border-top:1px solid rgba(0,212,255,0.4);color:var(--arc);font-family:'Orbitron',monospace;font-size:0.46rem;letter-spacing:0.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.15s;touch-action:manipulation;}
   .preview-mic-btn:hover{background:rgba(0,212,255,0.22);}
+  .preview-mic-btn.recording{border-top-color:#ff3c3c;color:#ff3c3c;background:rgba(255,60,60,0.12);}
   .preview-mic-btn.recording{background:rgba(255,60,60,0.18);border-top-color:var(--red);color:var(--red);animation:vbPulse 1s ease-in-out infinite;}
 
   /* MAIN */
@@ -639,7 +647,9 @@
        before to give the new tap-to-talk mic button a comfortable width. */
     #cameraPreviewWrap{right:8px;bottom:150px;width:128px;}
     #screenPreviewWrap{right:8px;bottom:265px;width:128px;}
+    #floatPreviewWrap{right:8px;bottom:150px;width:128px;}
     .preview-video{height:68px;}
+    .preview-float-body{min-height:44px;font-size:0.48rem;padding:6px;}
     .preview-handle{height:26px;}
     .preview-mic-btn{height:30px;font-size:0.5rem;}
 
@@ -999,6 +1009,20 @@
   </div>
   <video class="preview-video" id="screenVideo" autoplay muted playsinline></video>
   <button class="preview-mic-btn" id="scrMicBtn" onclick="toggleTapTalk()" title="Tap to talk to ANNA">🎙 TALK</button>
+</div>
+<!-- ★ FIX: mobile/limited browsers don't support Document PiP or a real
+     always-on-top window, so FLOAT used to just show a "not supported"
+     message there with no way to talk. This in-page floating bubble mirrors
+     the CAMERA/SCREEN preview widgets — draggable handle + working TALK
+     button — so FLOAT works the same way on mobile Chrome (or any browser
+     without PiP support) as it does via real PiP on desktop. -->
+<div class="floating-preview" id="floatPreviewWrap">
+  <div class="preview-handle" id="floatHandle">
+    <span class="preview-label">📌 A.N.N.A — drag here</span>
+    <button class="preview-close" onclick="closeMobileFloatWidget()">✕</button>
+  </div>
+  <div class="preview-float-body" id="floatBodyStatus">Floating — tap TALK to speak to me anytime.</div>
+  <button class="preview-mic-btn" id="floatMicBtn" onclick="toggleTapTalk()" title="Tap to talk to ANNA">🎙 TALK</button>
 </div>
 
 <div class="topbar">
@@ -1650,12 +1674,18 @@ setInterval(() => {
   const recording = typeof isTapRecording !== 'undefined' && isTapRecording;
   const label = speaking ? '🔊 SPEAKING' : (recording ? '🔴 STOP' : '🎙 TALK');
   const cls = 'preview-mic-btn' + (recording && !speaking ? ' recording' : '');
-  ['camMicBtn','scrMicBtn'].forEach(id => {
+  ['camMicBtn','scrMicBtn','floatMicBtn'].forEach(id => {
     const b = document.getElementById(id);
     if (!b) return;
     b.textContent = label;
     b.className = cls;
   });
+  const statusEl = document.getElementById('floatBodyStatus');
+  if (statusEl) {
+    if (speaking) { statusEl.textContent = '🔊 ANNA is speaking...'; statusEl.className = 'preview-float-body speaking'; }
+    else if (recording) { statusEl.textContent = '🎙 Listening — tap TALK again to send.'; statusEl.className = 'preview-float-body recording'; }
+    else { statusEl.textContent = 'Floating — tap TALK to speak to me anytime.'; statusEl.className = 'preview-float-body'; }
+  }
 }, 300);
 function captureFrame(videoEl) {
   try {
@@ -1677,6 +1707,7 @@ async function analyzeNow() {
 function initDraggable() {
   makeDraggable(document.getElementById('cameraPreviewWrap'), document.getElementById('camHandle'));
   makeDraggable(document.getElementById('screenPreviewWrap'), document.getElementById('scrHandle'));
+  makeDraggable(document.getElementById('floatPreviewWrap'), document.getElementById('floatHandle'));
 }
 // Hide the SCREEN button entirely on devices that can't screen-share (most phones) —
 // avoids a dead button that always fails, and reduces mobile topbar clutter.
@@ -3157,6 +3188,7 @@ setInterval(()=>{
 //  status-only canvas PiP (no buttons possible there — a hard browser limit).
 // ============================================================
 let docPipWindow = null;
+let mobileFloatOpen = false;
 
 async function toggleFloatingWidget() {
   // If a Document PiP window is open, close it
@@ -3166,14 +3198,44 @@ async function toggleFloatingWidget() {
     await document.exitPictureInPicture().catch(()=>{});
     return;
   }
+  // If the in-page mobile float bubble is open, close it
+  if (mobileFloatOpen) { closeMobileFloatWidget(); return; }
 
-  if ('documentPictureInPicture' in window) {
+  // ★ FIX: Document PiP (real always-on-top window with buttons) is a
+  // desktop-Chrome/Edge-only API and canvas-based video PiP has no room for
+  // interactive buttons — neither gives mobile users a working TALK button.
+  // On small/touch screens (or any browser lacking real Document PiP), use
+  // the in-page draggable FLOAT bubble instead, which has a real TALK button.
+  const isSmallScreen = window.matchMedia('(max-width:620px)').matches;
+  const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+  if ('documentPictureInPicture' in window && !isSmallScreen && !isTouchDevice) {
     await openDocPiPWidget();
-  } else if (document.pictureInPictureEnabled) {
+  } else if (document.pictureInPictureEnabled && !isSmallScreen && !isTouchDevice) {
     await openVideoPipWidget();
   } else {
-    addSystemMsg('Float mode isn\'t supported in this browser. Try Chrome or Edge.');
+    openMobileFloatWidget();
   }
+}
+
+// ── In-page floating FLOAT bubble — works everywhere, including mobile Chrome ──
+// Draggable (via makeDraggable/floatHandle below) and has a real TALK button
+// wired to the same toggleTapTalk() used everywhere else in the app.
+function openMobileFloatWidget() {
+  const btn = document.getElementById('pipBtn');
+  const wrap = document.getElementById('floatPreviewWrap');
+  if (!wrap) return;
+  wrap.style.display = 'flex';
+  mobileFloatOpen = true;
+  if (btn) { btn.classList.add('active-pip'); btn.innerHTML = '<div class="monitor-dot"></div>📌 FLOATING'; }
+  addSystemMsg('ANNA is floating — drag the box anywhere and tap 🎙 TALK to speak to me anytime.');
+}
+function closeMobileFloatWidget() {
+  const btn = document.getElementById('pipBtn');
+  const wrap = document.getElementById('floatPreviewWrap');
+  if (wrap) wrap.style.display = 'none';
+  mobileFloatOpen = false;
+  if (btn) { btn.classList.remove('active-pip'); btn.innerHTML = '<div class="monitor-dot"></div>📌 FLOAT'; }
 }
 
 // ── Real floating window with a working mic button (Chrome/Edge) ──
@@ -4806,6 +4868,103 @@ window.processFileForRead = async function(file) {
   };
 })();
 
+</script>
+
+<script>
+// ============================================================
+//  ★ NATIVE ANDROID BRIDGE (Capacitor APK build only)
+//  The web-only APIs this app used for FLOAT (documentPictureInPicture)
+//  and SCREEN (getDisplayMedia) do not exist in Android's WebView at all.
+//  When running inside the compiled Android app, route those buttons to
+//  real native code instead (floating overlay bubble + MediaProjection
+//  screen recording). In a normal desktop/mobile browser, window.Capacitor
+//  is simply absent and everything below is skipped — original behavior
+//  is untouched there.
+// ============================================================
+(function () {
+  function isNativeApp() {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  }
+
+  if (!isNativeApp()) return; // running in a normal browser — do nothing
+
+  const AnnaNative = window.Capacitor.Plugins.AnnaNative;
+  if (!AnnaNative) return;
+
+  let bubbleActive = false;
+
+  // Receive transcribed speech from the native floating bubble and feed it
+  // straight into the chat, exactly like a normal tap-to-talk result would.
+  AnnaNative.addListener('voiceResult', (data) => {
+    const text = (data && data.text || '').trim();
+    if (!text) return;
+    const inp = document.getElementById('chatInput');
+    if (inp) { inp.value = text; sendMessage(); }
+  });
+
+  AnnaNative.addListener('bubbleClosed', () => {
+    bubbleActive = false;
+    const btn = document.getElementById('pipBtn');
+    if (btn) btn.classList.remove('active-pip');
+  });
+
+  AnnaNative.addListener('recordingStopped', (data) => {
+    addSystemMsg('Screen recording saved: ' + (data && data.path ? data.path : 'ANNA/Movies folder'));
+    const btn = document.getElementById('screenBtn');
+    if (btn) btn.classList.remove('active-screen');
+  });
+
+  // ── Override FLOAT to use the real native overlay bubble ──
+  window.toggleFloatingWidget = async function () {
+    const btn = document.getElementById('pipBtn');
+    if (bubbleActive) {
+      await AnnaNative.stopFloatingBubble();
+      bubbleActive = false;
+      if (btn) btn.classList.remove('active-pip');
+      addSystemMsg('Floating bubble closed.');
+      return;
+    }
+    try {
+      const perm = await AnnaNative.canDrawOverlays();
+      if (!perm.granted) {
+        addSystemMsg('Please allow "display over other apps" for A.N.N.A, then tap FLOAT again.');
+        await AnnaNative.requestOverlayPermission();
+        return;
+      }
+      await AnnaNative.startFloatingBubble();
+      bubbleActive = true;
+      if (btn) btn.classList.add('active-pip');
+      addSystemMsg('ANNA is floating — drag the bubble anywhere, tap it to talk, even outside this app.');
+    } catch (e) {
+      addSystemMsg('Float failed: ' + (e && e.message ? e.message : e));
+    }
+  };
+
+  // ── Override SCREEN to use real native MediaProjection recording ──
+  window.screenShareSupported = function () { return true; };
+  window.toggleScreen = async function () {
+    const btn = document.getElementById('screenBtn');
+    if (btn && btn.classList.contains('active-screen')) {
+      await AnnaNative.stopScreenShare();
+      btn.classList.remove('active-screen');
+      document.getElementById('screenDot').style.opacity = '0.3';
+      document.getElementById('screenStatus').textContent = 'OFF';
+      document.getElementById('screenStatus').style.color = '';
+      addSystemMsg('Screen recording stopped.');
+      return;
+    }
+    try {
+      await AnnaNative.startScreenShare();
+      if (btn) btn.classList.add('active-screen');
+      document.getElementById('screenDot').style.opacity = '1';
+      document.getElementById('screenStatus').textContent = 'ON';
+      document.getElementById('screenStatus').style.color = 'var(--gold)';
+      addSystemMsg('Screen recording started (Android has no live screen-share-to-app API — this records to a video file you can open/share from the notification).');
+    } catch (e) {
+      addSystemMsg('Screen share failed or was denied: ' + (e && e.message ? e.message : e));
+    }
+  };
+})();
 </script>
 
 <!-- ══════════════ MINI FILE VIEWER ══════════════ -->
