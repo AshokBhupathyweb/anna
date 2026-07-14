@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
   :root {
     --arc:#00d4ff; --arc-dim:#0088aa; --arc-glow:rgba(0,212,255,0.4); --arc-deep:rgba(0,212,255,0.08);
@@ -207,6 +208,11 @@
   .checkin-opt:hover{border-color:var(--arc);color:var(--arc);background:var(--arc-deep);}
   .vision-btn{width:100%;margin-top:6px;padding:5px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);color:var(--green);font-family:'Orbitron',monospace;font-size:0.5rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;}
   .reminder-item{display:flex;gap:7px;align-items:center;font-size:0.63rem;padding:5px 7px;background:rgba(255,60,60,0.06);border-left:2px solid var(--red);margin-bottom:4px;}
+  .face-item{display:flex;gap:7px;align-items:center;font-size:0.62rem;padding:5px 7px;background:rgba(0,255,136,0.06);border-left:2px solid var(--green);margin-bottom:4px;}
+  .face-item.owner{background:rgba(255,215,0,0.08);border-left-color:var(--gold);}
+  .face-item .face-name{flex:1;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .face-item .face-tag{font-family:'Orbitron',monospace;font-size:0.42rem;letter-spacing:0.06em;color:var(--gold);}
+  .face-del{background:rgba(255,60,60,0.75);color:#fff;border:none;width:16px;height:16px;border-radius:50%;cursor:pointer;font-size:0.5rem;flex-shrink:0;line-height:1;}
   .reminder-time{font-family:'Share Tech Mono',monospace;color:var(--red);font-size:0.58rem;white-space:nowrap;}
   .reminder-del{background:transparent;border:none;color:var(--text-dim);cursor:pointer;font-size:0.65rem;padding:0 2px;margin-left:auto;}
 
@@ -1135,6 +1141,14 @@
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.57rem;color:var(--text-dim);line-height:1.4" id="visionStatusText"></div>
       <button class="vision-btn" onclick="analyzeNow()">🔍 ANALYZE NOW</button>
     </div>
+    <div id="facesPanel" class="dev-section">
+      <div class="dev-title">KNOWN FACES</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);line-height:1.4;margin-bottom:6px" id="facesStatusText">Face engine not loaded yet.</div>
+      <div id="facesList" style="display:flex;flex-direction:column;gap:4px;max-height:120px;overflow-y:auto;margin-bottom:6px"></div>
+      <button class="vision-btn" onclick="promptRememberFace()">🧑 REMEMBER THIS FACE</button>
+      <button class="vision-btn" style="margin-top:5px" onclick="whoIsThis()">🔎 WHO IS THIS?</button>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:5px">Turn on camera, then say "this is Alex" or "remember my face". Ask "who is this?" anytime.</div>
+    </div>
     <div class="dev-section">
       <div class="dev-title">REMINDERS</div>
       <div id="reminderList" style="display:flex;flex-direction:column;gap:4px;"></div>
@@ -1432,6 +1446,7 @@ async function init() {
   localStorage.setItem('anna_activated', '1');
   await initDB();
   await loadState();
+  await loadKnownFaces();
   syncTime();               // async - doesn't block startup
   updateClock();
   updateMetrics();
@@ -1543,6 +1558,7 @@ async function toggleCamera() {
     document.getElementById('camStatus').style.color='';
     if (cameraKeepalive) { clearInterval(cameraKeepalive); cameraKeepalive = null; }
     updateVisionPanel();
+    renderFacesList();
   } else {
     try {
       cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -1580,6 +1596,8 @@ async function toggleCamera() {
       }, 3000);
 
       updateVisionPanel();
+      renderFacesList();
+      loadFaceModels(); // fire-and-forget: warms up face recognition in the background
       addSystemMsg('Camera ON — I can see you now.');
       fridaySpeak('Camera active. I can see you, '+config.bossName+'.');
     } catch(e) { addSystemMsg('Camera access denied: ' + e.message); }
@@ -1664,6 +1682,176 @@ function updateVisionPanel() {
   const has = cameraStream||screenStream;
   document.getElementById('visionPanel').style.display = has?'block':'none';
   document.getElementById('visionStatusText').textContent = has ? [cameraStream?'camera':'',screenStream?'screen':''].filter(Boolean).join(' + ')+' active' : '';
+}
+
+// ============================================================
+//  FACE MEMORY — remembers faces locally in the browser so ANNA
+//  can tell the boss apart from other people. Uses face-api.js
+//  (runs entirely on-device, nothing is uploaded anywhere).
+// ============================================================
+const FACE_MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/weights';
+const FACE_MATCH_THRESHOLD = 0.5; // lower = stricter match (euclidean distance on 128-d descriptor)
+let knownFaces = [];           // [{id, name, isOwner, descriptor:[128 floats], addedAt}]
+let faceApiLoaded = false, faceApiLoading = null;
+
+async function loadKnownFaces() {
+  try { knownFaces = (await dbGet('faces')) || []; } catch(e) { knownFaces = []; }
+  renderFacesList();
+}
+function saveKnownFaces() { dbSet('faces', knownFaces); renderFacesList(); }
+
+function renderFacesList() {
+  const list = document.getElementById('facesList');
+  const status = document.getElementById('facesStatusText');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!knownFaces.length) {
+    list.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:0.55rem;color:var(--text-dim)">No faces remembered yet.</div>';
+  } else {
+    knownFaces.forEach(f => {
+      const d = document.createElement('div');
+      d.className = 'face-item' + (f.isOwner ? ' owner' : '');
+      d.innerHTML = `<span class="face-name">${escHtml(f.name)}</span>${f.isOwner?'<span class="face-tag">YOU</span>':''}<button class="face-del" title="Forget this face" onclick="forgetFace('${f.id}')">✕</button>`;
+      list.appendChild(d);
+    });
+  }
+  if (status) status.textContent = faceApiLoaded
+    ? `Face engine ready · ${knownFaces.length} known`
+    : (cameraStream ? 'Loading face engine…' : 'Turn on camera to enable face recognition.');
+}
+
+// Lazily loads the (fairly small) detection/landmark/recognition models —
+// only once, and only when actually needed, so page load stays fast.
+async function loadFaceModels() {
+  if (faceApiLoaded) return true;
+  if (faceApiLoading) return faceApiLoading;
+  if (typeof faceapi === 'undefined') { addSystemMsg('⚠ Face engine failed to load (no internet?). Face recognition unavailable.'); return false; }
+  faceApiLoading = (async () => {
+    try {
+      await faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODEL_URL);
+      await faceapi.nets.faceLandmark68TinyNet.loadFromUri(FACE_MODEL_URL);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODEL_URL);
+      faceApiLoaded = true;
+      renderFacesList();
+      return true;
+    } catch (e) {
+      addSystemMsg('⚠ Could not load face recognition models: ' + (e && e.message ? e.message : e));
+      return false;
+    } finally { faceApiLoading = null; }
+  })();
+  return faceApiLoading;
+}
+
+function euclideanDistance(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += (a[i]-b[i])*(a[i]-b[i]);
+  return Math.sqrt(sum);
+}
+function findMatchingFace(descriptor) {
+  let best = null, bestDist = Infinity;
+  for (const f of knownFaces) {
+    const dist = euclideanDistance(descriptor, f.descriptor);
+    if (dist < bestDist) { bestDist = dist; best = f; }
+  }
+  return (best && bestDist < FACE_MATCH_THRESHOLD) ? {face:best, distance:bestDist} : null;
+}
+
+// Detects the single most prominent face in the live camera feed and
+// returns its 128-value descriptor, or null if no face was found.
+async function detectFaceDescriptor() {
+  const videoEl = document.getElementById('cameraVideo');
+  if (!cameraStream || !videoEl) return null;
+  const ok = await loadFaceModels();
+  if (!ok) return null;
+  try {
+    const result = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks(true).withFaceDescriptor();
+    return result ? Array.from(result.descriptor) : null;
+  } catch(e) { return null; }
+}
+// Detects ALL faces currently visible (used by "who is this" when several people are in frame)
+async function detectAllFaceDescriptors() {
+  const videoEl = document.getElementById('cameraVideo');
+  if (!cameraStream || !videoEl) return [];
+  const ok = await loadFaceModels();
+  if (!ok) return [];
+  try {
+    const results = await faceapi.detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks(true).withFaceDescriptors();
+    return results.map(r => Array.from(r.descriptor));
+  } catch(e) { return []; }
+}
+
+// Saves (or updates) a named face from whatever the camera currently sees.
+async function rememberFace(name, opts) {
+  opts = opts || {};
+  name = (name||'').trim().replace(/[.!?]+$/,'');
+  if (!name) { addSystemMsg("I didn't catch a name to remember that face as."); return; }
+  if (!cameraStream) { addSystemMsg('Turn the camera on first, then show me the face to remember.'); return; }
+  addSystemMsg(`Looking at the camera to remember ${opts.isOwner ? 'your' : name+"'s"} face…`);
+  const descriptor = await detectFaceDescriptor();
+  if (!descriptor) {
+    addSystemMsg("I couldn't clearly see a face — make sure it's centered in the camera and try again.");
+    return;
+  }
+  const existingIdx = knownFaces.findIndex(f => f.name.toLowerCase() === name.toLowerCase());
+  const entry = { id: existingIdx>=0 ? knownFaces[existingIdx].id : String(Date.now()), name, isOwner: !!opts.isOwner, descriptor, addedAt: Date.now() };
+  if (existingIdx >= 0) knownFaces[existingIdx] = entry; else knownFaces.push(entry);
+  saveKnownFaces();
+  const msg = `Got it — I'll remember ${opts.isOwner ? 'you' : name} from now on, ${config.bossName}.`;
+  addMsg('anna', msg); saveChat('assistant', msg); fridaySpeak(msg);
+}
+window.forgetFace = function(id) {
+  const f = knownFaces.find(x => x.id === id);
+  knownFaces = knownFaces.filter(x => x.id !== id);
+  saveKnownFaces();
+  if (f) addSystemMsg(`Forgot ${f.name}'s face.`);
+};
+function forgetFaceByName(name) {
+  name = (name||'').trim();
+  const before = knownFaces.length;
+  knownFaces = knownFaces.filter(f => f.name.toLowerCase() !== name.toLowerCase());
+  saveKnownFaces();
+  const msg = knownFaces.length < before ? `Forgot ${name}'s face, ${config.bossName}.` : `I don't have anyone named "${name}" remembered.`;
+  addMsg('anna', msg); saveChat('assistant', msg); fridaySpeak(msg);
+}
+// Prompted version for the panel button (asks for a name via a simple dialog)
+window.promptRememberFace = function() {
+  if (!cameraStream) { addSystemMsg('Turn the camera on first, then tap REMEMBER THIS FACE.'); return; }
+  const name = window.prompt("Whose face is this? (say who's in front of the camera)");
+  if (name && name.trim()) rememberFace(name.trim());
+};
+// "Who is this?" — identifies everyone currently visible in the camera
+window.whoIsThis = async function() {
+  if (!cameraStream) { addSystemMsg('Turn the camera on first so I can take a look.'); return; }
+  showTyping();
+  const descriptors = await detectAllFaceDescriptors();
+  removeTyping();
+  if (!descriptors.length) {
+    const msg = `I don't see a clear face right now, ${config.bossName}.`;
+    addMsg('anna', msg); saveChat('assistant', msg); fridaySpeak(msg);
+    return;
+  }
+  const names = descriptors.map(d => {
+    const m = findMatchingFace(d);
+    return m ? (m.face.isOwner ? `${m.face.name} (you)` : m.face.name) : 'someone I don\'t recognize yet';
+  });
+  const msg = descriptors.length === 1
+    ? `That's ${names[0]}, ${config.bossName}.`
+    : `I can see ${names.length} people: ${names.join(', ')}.`;
+  addMsg('anna', msg); saveChat('assistant', msg); fridaySpeak(msg);
+};
+// Returns a short human-readable string of recognized faces for the current
+// camera frame, used to quietly enrich the vision prompt sent to the AI.
+async function recognizedFacesContext() {
+  if (!cameraStream || !knownFaces.length) return '';
+  const descriptors = await detectAllFaceDescriptors();
+  if (!descriptors.length) return '';
+  const names = descriptors.map(d => {
+    const m = findMatchingFace(d);
+    return m ? (m.face.isOwner ? `${m.face.name} (the user)` : m.face.name) : 'an unrecognized person';
+  });
+  return `[Face recognition: ${names.join(', ')}]`;
 }
 // ── Keep the floating camera/screen preview mic buttons in sync with the
 // real TAP state. They call the exact same toggleTapTalk() function as the
@@ -2753,6 +2941,27 @@ async function sendMessage() {
       return; // handled with voice confirmation inside handler
     }
 
+    // ─── FACE MEMORY VOICE COMMANDS ───
+    // Only intercept naming phrases like "this is Alex" when the camera is
+    // actually on and pointed at someone — otherwise these are just normal
+    // sentences and should fall through to the AI as usual.
+    if (cameraStream) {
+      const mMyFace = lo.match(/^(?:remember\s+me|remember\s+my\s+face|(?:my\s+name\s+is)\s+([a-zA-Z' -]{2,30}))$/i);
+      if (mMyFace) { await rememberFace(mMyFace[1] || config.bossName, {isOwner:true}); return; }
+
+      const mRememberFace = lo.match(/^(?:remember|save)\s+(?:this\s+|that\s+)?(?:person|face)?'?s?\s*(?:name\s+)?(?:is|as)\s+([a-zA-Z' -]{2,30})$/i)
+        || lo.match(/^(?:this|that)\s+is\s+([a-zA-Z' -]{2,30})$/i)
+        || lo.match(/^(?:his|her|their)\s+name\s+is\s+([a-zA-Z' -]{2,30})$/i);
+      if (mRememberFace) { await rememberFace(mRememberFace[1], {isOwner:false}); return; }
+    }
+    const mForgetFace = lo.match(/^(?:forget|remove|delete)\s+(?:the\s+)?face\s+(?:of\s+)?([a-zA-Z' -]{2,30})$/i);
+    if (mForgetFace) { forgetFaceByName(mForgetFace[1]); return; }
+
+    if (/^who\s+(?:is\s+this|is\s+that|do\s+you\s+see|is\s+in\s+front\s+of\s+(?:the\s+)?camera)\??$/i.test(lo) ||
+        /^(?:do\s+you\s+)?recognize\s+(?:this\s+person|them|him|her)\??$/i.test(lo)) {
+      await whoIsThis(); return;
+    }
+
     // ─── BROWSER CONTROL (quick, no API needed) ───
     const handled = handleBrowserCommand(lo, text);
     if (handled) {
@@ -2761,15 +2970,20 @@ async function sendMessage() {
 
     // ─── VISION ───
     let frames = null;
+    let visionText = text;
     if (cameraStream || screenStream) {
       frames = [];
       if (cameraStream) { const f = captureFrame(document.getElementById('cameraVideo')); if(f) frames.push({label:'[Camera view]',data:f}); }
       if (screenStream) { const f = captureFrame(document.getElementById('screenVideo')); if(f) frames.push({label:'[Screen view]',data:f}); }
       if (!frames.length) frames = null;
+      if (cameraStream && knownFaces.length) {
+        const faceCtx = await recognizedFacesContext();
+        if (faceCtx) visionText = text + '\n\n' + faceCtx;
+      }
     }
 
     showTyping();
-    const reply = await callGroq(text, frames);
+    const reply = await callGroq(visionText, frames);
     removeTyping();
 
     const cleanReply = executeComputerTags(reply);
