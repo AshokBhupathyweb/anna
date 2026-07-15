@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1152,7 +1153,11 @@
     <div class="dev-section">
       <div class="dev-title">REMINDERS</div>
       <div id="reminderList" style="display:flex;flex-direction:column;gap:4px;"></div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--text-dim);margin-top:5px">Say "remind me at 3pm to call John"</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--text-dim);margin-top:5px">Say "remind me at 3pm to call John", "remind me in 10 minutes to check the oven", or "remind me in ten minutes about the meeting" — words or digits both work.</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+        <button class="vision-btn" style="flex:1;margin:0" onclick="enableNotifications()">🔔 ENABLE NOTIFICATIONS</button>
+      </div>
+      <div id="notifPermStatus" style="font-family:'Share Tech Mono',monospace;font-size:0.52rem;margin-top:5px;color:var(--text-dim)">Checking…</div>
     </div>
     <div class="dev-section">
       <div class="dev-title">MEMORY</div>
@@ -1221,6 +1226,68 @@
       </div>
       <div id="micTestResult" style="font-family:'Share Tech Mono',monospace;font-size:0.58rem;margin-top:5px;min-height:16px;"></div>
     </div>
+    <div class="form-group">
+      <label class="form-label">🌐 LANGUAGE <span style="color:var(--text-dim);font-size:0.5rem;font-family:'Share Tech Mono',monospace;letter-spacing:0.05em"> — ANNA listens &amp; replies in this language</span></label>
+      <select class="form-input" id="langSelect" onchange="updateVoiceCoverageStatus()">
+        <optgroup label="English">
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="en-IN">English (India)</option>
+          <option value="en-AU">English (Australia)</option>
+        </optgroup>
+        <optgroup label="Indian Languages">
+          <option value="hi-IN">Hindi — हिन्दी</option>
+          <option value="ta-IN">Tamil — தமிழ்</option>
+          <option value="te-IN">Telugu — తెలుగు</option>
+          <option value="kn-IN">Kannada — ಕನ್ನಡ</option>
+          <option value="ml-IN">Malayalam — മലയാളം</option>
+          <option value="bn-IN">Bengali — বাংলা</option>
+          <option value="mr-IN">Marathi — मराठी</option>
+          <option value="gu-IN">Gujarati — ગુજરાતી</option>
+          <option value="pa-IN">Punjabi — ਪੰਜਾਬੀ</option>
+          <option value="ur-PK">Urdu — اردو</option>
+        </optgroup>
+        <optgroup label="World Languages">
+          <option value="es-ES">Spanish — Español</option>
+          <option value="fr-FR">French — Français</option>
+          <option value="de-DE">German — Deutsch</option>
+          <option value="it-IT">Italian — Italiano</option>
+          <option value="pt-BR">Portuguese — Português</option>
+          <option value="ru-RU">Russian — Русский</option>
+          <option value="zh-CN">Chinese — 中文</option>
+          <option value="ja-JP">Japanese — 日本語</option>
+          <option value="ko-KR">Korean — 한국어</option>
+          <option value="ar-SA">Arabic — العربية</option>
+          <option value="tr-TR">Turkish — Türkçe</option>
+          <option value="id-ID">Indonesian — Bahasa Indonesia</option>
+          <option value="vi-VN">Vietnamese — Tiếng Việt</option>
+        </optgroup>
+      </select>
+      <div id="voiceCoverageStatus" style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;margin-top:5px;min-height:14px;"></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:4px">For non-English languages ANNA automatically uses the smarter 70B model for replies (the fast 8B model often ignores non-English instructions), even if a faster model is selected below.</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:4px">Voice recognition, TTS voice, and ANNA's replies all switch to this language. Actual voice availability depends on your device/browser's installed voices.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🗣 VOICE PERSONA <span style="color:var(--text-dim);font-size:0.5rem;font-family:'Share Tech Mono',monospace;letter-spacing:0.05em"> — pick a voice character</span></label>
+      <div style="display:flex;gap:6px;">
+        <select class="form-input" id="voiceGenderSelect" style="flex:1;">
+          <option value="auto">Auto</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+        </select>
+        <select class="form-input" id="voiceStyleSelect" style="flex:1;">
+          <option value="default">Default — Warm</option>
+          <option value="sweet">Sweet &amp; Soft</option>
+          <option value="rough">Rough &amp; Deep</option>
+          <option value="energetic">Energetic &amp; Bright</option>
+          <option value="calm">Calm &amp; Slow</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+        <button type="button" onclick="testVoiceSample()" style="background:rgba(0,212,255,0.08);border:1px solid var(--arc);color:var(--arc);font-family:'Orbitron',monospace;font-size:0.52rem;padding:6px 12px;cursor:pointer;white-space:nowrap;">🔊 TEST VOICE</button>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);">Preview before saving</span>
+      </div>
+    </div>
       <span style="color:var(--arc)">// VOICE COMMANDS:</span> "add task X" · "delete task X" · "complete task X" · "edit task X to Y" · "note: X" · "delete notes X" · "clear notes" · "remind me at 3pm to X" · "delete event X" · "edit event X to Y" · "open youtube" · "play X on youtube" · "search for X" · "open github" · "what time is it"<br>
       <span style="color:var(--arc)">// MEMORY:</span> All chats, tasks, schedule, notes saved permanently in browser<br>
       <span style="color:var(--arc)">// INTERRUPT:</span> Speak while ANNA talks — she stops and listens instantly<br>
@@ -1257,7 +1324,10 @@ let config = {
   groqKey: '',   // ← intentionally blank — enter in ⚙ CONFIG
   bossName: 'Boss',
   groqModel: 'llama-3.1-8b-instant',
-  preferredMicId: '' // ← mic device ID — empty = system default
+  preferredMicId: '', // ← mic device ID — empty = system default
+  language: 'en-US',      // ← speaking + listening language (BCP-47 code)
+  voiceGender: 'auto',    // ← 'auto' | 'female' | 'male'
+  voiceStyle: 'default'   // ← 'default' | 'sweet' | 'rough' | 'energetic' | 'calm'
 };
 
 // Load saved config from localStorage synchronously (instant, before IndexedDB loads)
@@ -1267,6 +1337,9 @@ try {
   if (saved.bossName) config.bossName = saved.bossName;
   if (saved.groqModel) config.groqModel = saved.groqModel;
   if (saved.preferredMicId) config.preferredMicId = saved.preferredMicId;
+  if (saved.language) config.language = saved.language;
+  if (saved.voiceGender) config.voiceGender = saved.voiceGender;
+  if (saved.voiceStyle) config.voiceStyle = saved.voiceStyle;
 } catch(e) {}
 
 // ─── MIC AUDIO CONSTRAINTS — always uses selected mic device if set ───
@@ -1458,8 +1531,9 @@ async function init() {
   if ('Notification' in window && Notification.permission === 'default' &&
       !localStorage.getItem('anna_notif_asked')) {
     localStorage.setItem('anna_notif_asked', '1');
-    Notification.requestPermission();
+    Notification.requestPermission().then(updateNotifPermStatus);
   }
+  updateNotifPermStatus();
 
   // Show API key prompt if not set
   if (!config.groqKey) {
@@ -2048,7 +2122,7 @@ function _buildSR() {
   // after every utterance instead — this behaves like "always on" in practice.
   sr.continuous      = !isMobileDevice;
   sr.interimResults  = false;
-  sr.lang            = 'en-US';
+  sr.lang            = config.language || 'en-US';
   sr.maxAlternatives = 1;
 
   sr.onstart = () => { window.srLastActivity = Date.now(); setStatus('always-on', '👂 LISTENING...'); };
@@ -2337,6 +2411,10 @@ function stopInterruptMonitor() {
 }
 function interruptSpeech() {
   if (!isSpeaking) return;
+  // If a reminder is mid-"call" (repeating until acknowledged), the user speaking
+  // counts as acknowledgment — stop re-announcing it.
+  const rToast = document.getElementById('reminderToast');
+  if (rToast && rToast.style.display === 'block') dismissReminderToast();
   if (window._ttsKeepAliveTimer) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; }
   speechSynthesis.cancel(); ttsQueue = []; isSpeaking = false;
   animateVoiceBars(false); stopInterruptMonitor();
@@ -2345,33 +2423,106 @@ function interruptSpeech() {
   if (isAlwaysOn) _restartSR(200);
 }
 
+// ── Whisper (Groq) expects a bare ISO-639-1 code, not a full BCP-47 tag ──
+function whisperLangCode(bcp47) {
+  return (bcp47 || 'en-US').split('-')[0].toLowerCase();
+}
+
+// ── Human-readable language name for the AI system prompt ──
+const LANGUAGE_NAMES = {
+  en: 'English', hi: 'Hindi', ta: 'Tamil', te: 'Telugu', kn: 'Kannada',
+  ml: 'Malayalam', bn: 'Bengali', mr: 'Marathi', gu: 'Gujarati', pa: 'Punjabi',
+  ur: 'Urdu', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
+  pt: 'Portuguese', ru: 'Russian', zh: 'Chinese', ja: 'Japanese', ko: 'Korean',
+  ar: 'Arabic', tr: 'Turkish', id: 'Indonesian', vi: 'Vietnamese'
+};
+function languageName(bcp47) {
+  return LANGUAGE_NAMES[whisperLangCode(bcp47)] || 'English';
+}
+
 // ============================================================
-//  TTS — sentence-split to fix buffering/freeze
+//  TTS — sentence-split to fix buffering/freeze — now multi-lingual,
+//  with selectable voice gender (male/female) and style (sweet/rough/etc)
 // ============================================================
 let voices = [];
 function prefetchVoices() {
   const load = () => { voices = speechSynthesis.getVoices(); };
   load(); speechSynthesis.onvoiceschanged = load;
 }
-function pickBestVoice() {
+// Known female / male voice names across common OS + browser TTS engines
+// (used as a heuristic since SpeechSynthesisVoice doesn't expose gender directly)
+const FEMALE_VOICE_HINTS = /female|zira|samantha|karen|victoria|susan|aria|jenny|michelle|catherine|heera|raveena|kalpana|aditi|moira|tessa|fiona|amelie|paulina|ines|anna|marie|sara|elsa|nora|xiaoxiao|mei-?jia|yuna|seoyeon/i;
+const MALE_VOICE_HINTS   = /male|david|mark|guy|daniel|fred|tom|george|james|alex(?!a)|hemant|ravi|rishi|thomas|jorge|diego|xander|yannick|liam|matthew/i;
+
+// Reports how well the current device/browser can actually speak a language:
+// 'exact'  = a voice for the precise locale (e.g. ta-IN) is installed
+// 'family' = a voice for the language exists but under a different region tag
+// 'none'   = no voice at all for this language — TTS will fall back to English
+function voiceCoverage(lang) {
   if (!voices.length) voices = speechSynthesis.getVoices();
-  // Priority: US female > US any > UK > any English
-  // NEVER pick Indian voices (Heera, Raveena, Kalpana) — they cause language confusion
+  const langShort = lang.split('-')[0].toLowerCase();
+  if (voices.some(v => v.lang && v.lang.toLowerCase() === lang.toLowerCase())) return 'exact';
+  if (voices.some(v => v.lang && v.lang.toLowerCase().startsWith(langShort))) return 'family';
+  return 'none';
+}
+
+// gender: 'auto' | 'female' | 'male'   style: 'default'|'sweet'|'rough'|'energetic'|'calm'
+// Returns { voice, coverage } — coverage tells the caller whether the returned
+// voice actually speaks the requested language, or is just an English fallback.
+function pickBestVoice(lang, gender, style) {
+  if (!voices.length) voices = speechSynthesis.getVoices();
+  lang   = lang   || config.language   || 'en-US';
+  gender = gender || config.voiceGender|| 'auto';
+  style  = style  || config.voiceStyle || 'default';
+  const langShort = lang.split('-')[0].toLowerCase();
+  const coverage = voiceCoverage(lang);
+
+  // "Rough" leans male by default, "sweet" leans female — unless the user explicitly chose a gender
+  let wantGender = gender;
+  if (wantGender === 'auto') {
+    if (style === 'rough') wantGender = 'male';
+    else if (style === 'sweet') wantGender = 'female';
+  }
+
+  // 1) voices matching the exact locale (e.g. ta-IN)
+  let pool = voices.filter(v => v.lang && v.lang.toLowerCase() === lang.toLowerCase());
+  // 2) fall back to any voice matching just the language (e.g. any "ta-*")
+  if (!pool.length) pool = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith(langShort));
+  // 3) fall back to English voices (never fail silently — always speak something)
+  if (!pool.length) pool = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+  // 4) absolute fallback — whatever the platform gives us
+  if (!pool.length) pool = voices.slice();
+  if (!pool.length) return { voice: null, coverage };
+
+  if (wantGender === 'female') {
+    const f = pool.filter(v => FEMALE_VOICE_HINTS.test(v.name) && !MALE_VOICE_HINTS.test(v.name));
+    if (f.length) return { voice: f[0], coverage };
+  } else if (wantGender === 'male') {
+    const m = pool.filter(v => MALE_VOICE_HINTS.test(v.name) && !FEMALE_VOICE_HINTS.test(v.name));
+    if (m.length) return { voice: m[0], coverage };
+  }
+
+  // Preferred well-known natural-sounding voices, still constrained to the matched pool
   const priority = [
     v => v.name === 'Microsoft Zira - English (United States)',
     v => v.name === 'Google US English',
     v => v.name === 'Samantha',
-    v => v.name.includes('Zira') && v.lang.startsWith('en'),
-    v => v.name.includes('Samantha') && v.lang.startsWith('en'),
-    v => v.name.includes('Karen') && v.lang.startsWith('en'),
-    v => v.name.includes('Victoria') && v.lang.startsWith('en'),
-    v => v.name.includes('Susan') && v.lang.startsWith('en'),
-    v => v.lang === 'en-US' && !/(heera|raveena|kalpana|hemant)/i.test(v.name),
-    v => v.lang === 'en-GB' && !/(heera|raveena|kalpana)/i.test(v.name),
-    v => v.lang.startsWith('en') && !/(heera|raveena|kalpana)/i.test(v.name),
+    v => v.default,
   ];
-  for (const test of priority) { const f = voices.find(test); if (f) return f; }
-  return null;
+  for (const test of priority) { const f = pool.find(test); if (f) return { voice: f, coverage }; }
+  return { voice: pool[0], coverage };
+}
+
+// Rate/pitch shaping per voice "style" — browsers can't truly re-texture a voice,
+// so style is approximated with pitch/rate plus the gender bias above.
+function styleParams(style) {
+  switch (style) {
+    case 'sweet':     return { rate: 0.92, pitch: 1.3  };
+    case 'rough':      return { rate: 0.95, pitch: 0.6  };
+    case 'energetic':  return { rate: 1.12, pitch: 1.18 };
+    case 'calm':       return { rate: 0.78, pitch: 0.95 };
+    default:           return { rate: 0.88, pitch: 1.05 };
+  }
 }
 function cleanForSpeech(text) {
   return text
@@ -2423,7 +2574,7 @@ function processTTSQueue() {
   if (micStream && isAlwaysOn) startInterruptMonitor();
 }
 
-function speakWithBrowser(text) {
+function speakWithBrowser(text, overrides) {
   // ★ FIX: the Chrome keep-alive workaround below (pause/resume every 8s to stop
   // long utterances auto-cutting off) was never cleared when speech finished —
   // only when its own tick happened to notice speaking had stopped. Since a new
@@ -2435,13 +2586,35 @@ function speakWithBrowser(text) {
   // timer, and it's explicitly cleared the moment an utterance ends or errors.
   if (window._ttsKeepAliveTimer) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; }
   speechSynthesis.cancel();
+  const lang   = (overrides && overrides.lang)   || config.language    || 'en-US';
+  const gender = (overrides && overrides.gender) || config.voiceGender || 'auto';
+  const style  = (overrides && overrides.style)  || config.voiceStyle  || 'default';
+  const sp = styleParams(style);
   const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'en-US';
-  utt.rate = 0.88;
-  utt.pitch = 1.05;
+  utt.rate = sp.rate;
+  utt.pitch = sp.pitch;
   utt.volume = 1.0;
-  const voice = pickBestVoice();
-  if (voice) utt.voice = voice;
+  const picked = pickBestVoice(lang, gender, style);
+  const voice = picked && picked.voice;
+  if (voice) {
+    utt.voice = voice;
+    // ★ FIX: if no native voice exists for the chosen language, we fall back to an
+    // English (or other) voice object. Forcing utt.lang to the ORIGINAL target
+    // language while assigning a voice that doesn't speak it made some engines
+    // (notably Chrome/Android) silently refuse to produce any audio at all. Match
+    // utt.lang to whatever voice we actually got so speech always comes out —
+    // it just won't be pronounced natively when there's truly no voice installed.
+    utt.lang = voice.lang || lang;
+  } else {
+    utt.lang = lang;
+  }
+  if (picked && picked.coverage === 'none' && lang.split('-')[0].toLowerCase() !== 'en') {
+    window._voiceWarnedLangs = window._voiceWarnedLangs || new Set();
+    if (!window._voiceWarnedLangs.has(lang)) {
+      window._voiceWarnedLangs.add(lang);
+      addSystemMsg('⚠ No ' + languageName(lang) + ' voice is installed on this device/browser, so ANNA is speaking with an English voice instead (pronunciation will be off). On Windows: Settings → Time & Language → Speech → Add voices. On Android: Settings → System → Languages → Text-to-speech → install voice data. On iPhone: Settings → Accessibility → Spoken Content → Voices.');
+    }
+  }
   utt.onend = () => {
     if (window._ttsKeepAliveTimer) { clearInterval(window._ttsKeepAliveTimer); window._ttsKeepAliveTimer = null; }
     if (isSpeaking) processTTSQueue();
@@ -2492,7 +2665,7 @@ function prewarmTapSR() {
   tapSRWarmed = true;
   try {
     const warm = new SRClass();
-    warm.lang = 'en-US';
+    warm.lang = config.language || 'en-US';
     warm.continuous = false;
     warm.interimResults = false;
     warm.onresult = () => {};          // discard any accidental result
@@ -2608,7 +2781,7 @@ async function transcribeAndSend() {
   form.append('file', blob, 'audio.webm');
   form.append('model', 'whisper-large-v3');
   form.append('response_format', 'json');
-  form.append('language', 'en');
+  form.append('language', whisperLangCode(config.language));
   try {
     const res = await fetchWithTimeout('https://api.groq.com/openai/v1/audio/transcriptions', {
       method:'POST', headers:{'Authorization':'Bearer '+config.groqKey}, body:form
@@ -2641,9 +2814,17 @@ async function fetchWithTimeout(url, options, ms=20000) {
 
 const FRIDAY_SYS = () => {
   const t = getNow();
+  const langName = languageName(config.language);
+  const isEnglish = whisperLangCode(config.language) === 'en';
+  const langBlock = isEnglish ? '' : `
+⚠ LANGUAGE — HIGHEST PRIORITY RULE, FOLLOW EXACTLY:
+Respond ONLY in ${langName}, written in native ${langName} script (never Romanized/transliterated, never English), unless ${config.bossName}'s message is clearly written in a different language — then reply in that language instead. Do not mix English words in unless they are proper nouns with no ${langName} equivalent. Do not translate word-for-word; write naturally as a native ${langName} speaker would.
+`;
   return `You are A.N.N.A (Adaptive Neural Network Assistant), an advanced AI personal assistant. You assist ${config.bossName}.
-
+${langBlock}
 PERSONALITY: Warm, caring, professional, witty. Like a real personal assistant who genuinely knows you. Speak naturally — responses go to voice TTS, so NO bullet lists, NO asterisks, NO markdown symbols. Use "${config.bossName}" naturally. Proactively suggest: "Want me to add that to your tasks?" "Shall I set a reminder for that?"
+
+LANGUAGE: Reply only in ${languageName(config.language)} (unless ${config.bossName} clearly writes/speaks in a different language, in which case switch to match them naturally for that reply). Keep it natural and conversational in that language — no literal word-for-word translation feel.
 
 CURRENT: ${t.dateStr} · ${t.timeStr} | Mode: ${mode.toUpperCase()}
 CAMERA: ${cameraStream?'ON':'OFF'} | SCREEN: ${screenStream?'ON':'OFF'}
@@ -2675,7 +2856,8 @@ IMPORTANT RULES:
 - "delete/remove notes X", "clear notes" → system handles it automatically
 - "delete/remove event X", "edit event X to Y" → system handles it automatically
 
-STYLE: Short = 1-2 sentences. Detailed when needed. Always human, warm, natural.`;
+STYLE: Short = 1-2 sentences. Detailed when needed. Always human, warm, natural.
+${isEnglish ? '' : 'REMINDER: Write your entire reply in ' + langName + ' script now.'}`;
 };
 
 async function callGroq(message, frames=null, retry=0) {
@@ -2691,7 +2873,15 @@ async function callGroq(message, frames=null, retry=0) {
   } else { content = message; }
 
   const history = [...conversationHistory.slice(-20), {role:'user',content}];
-  const model = (frames?.length) ? VISION_MODEL : config.groqModel;
+  // ★ FIX: the fast 'llama-3.1-8b-instant' model frequently ignores language
+  // instructions and replies in English (or broken transliteration) for
+  // non-English languages, especially Indic ones like Tamil. The larger
+  // 70B model follows multilingual instructions far more reliably, so we
+  // auto-upgrade to it whenever a non-English language is selected —
+  // regardless of the model chosen in ⚙ CONFIG — to keep native-language
+  // replies working correctly.
+  const needsStrongModel = whisperLangCode(config.language) !== 'en' && config.groqModel === 'llama-3.1-8b-instant';
+  const model = (frames?.length) ? VISION_MODEL : (needsStrongModel ? 'llama-3.3-70b-versatile' : config.groqModel);
 
   try {
     lastApiAttempt = Date.now();
@@ -2918,8 +3108,11 @@ async function sendMessage() {
       }
     }
 
-    // ─── REMINDER ───
-    if (/remind\s+me|set\s+(?:a\s+)?reminder/i.test(lo)) {
+    // ─── REMINDER / NOTIFICATION ───
+    // Catches many natural ways of asking for the same thing: "remind me...",
+    // "set a reminder...", "notify me...", "give/pull/send me a notification...",
+    // "alert me...", "do a reminder...".
+    if (/remind\s+me|set\s+(?:a\s+|an?\s+)?reminder|do\s+(?:a\s+|an?\s+)?reminder|notify\s+me|(?:give|pull|send|get|shoot)\s+me\s+a\s+notification|alert\s+me/i.test(lo)) {
       handleReminder(text);
       // Still pass to AI for a natural confirmation
     }
@@ -3198,11 +3391,89 @@ function saveNotes() {
 
 // ============================================================
 //  REMINDERS — visible toast + notification + sound
+//  Now understands natural language: digits AND spelled-out words,
+//  relative durations ("in 10 minutes" / "in ten minutes" / "after
+//  half an hour"), and absolute clock times ("at 6pm", "tomorrow at
+//  9am", "tonight at 8") that correctly roll over to the next day
+//  if the time already passed today.
 // ============================================================
+const WORD_NUMBERS = {
+  zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10,
+  eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16, seventeen:17,
+  eighteen:18, nineteen:19, twenty:20, thirty:30, forty:40, fifty:50, sixty:60
+};
+// Turns "twenty five", "twenty-five", "ten", or "10" into a number. Returns null if unparsable.
+function wordsToNumber(raw) {
+  const str = String(raw).toLowerCase().replace(/-/g, ' ').trim();
+  if (/^\d+$/.test(str)) return parseInt(str, 10);
+  if (WORD_NUMBERS[str] != null) return WORD_NUMBERS[str];
+  const parts = str.split(/\s+/).filter(Boolean);
+  if (parts.length === 2 && WORD_NUMBERS[parts[0]] >= 20 && WORD_NUMBERS[parts[1]] < 10 && WORD_NUMBERS[parts[1]] != null) {
+    return WORD_NUMBERS[parts[0]] + WORD_NUMBERS[parts[1]];
+  }
+  return null;
+}
+// Detects "in/after <amount> <unit>" — amount can be digits or words, unit can be
+// seconds/minutes/hours (with common abbreviations), plus "half an hour"/"a couple
+// of minutes"/"a few hours" style phrasing. Returns milliseconds, or null.
+function parseRelativeDuration(text) {
+  const re = /\b(?:in|after)\s+(half(?:\s+an)?|a\s+couple(?:\s+of)?|a\s+few|an?|\d+|[a-z]+(?:[\s-][a-z]+)?)\s+(seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/i;
+  const m = text.match(re);
+  if (!m) return null;
+  const qtyStr = m[1].toLowerCase().trim();
+  const unit = m[2].toLowerCase();
+  let qty;
+  if (/^half/.test(qtyStr)) qty = 0.5;
+  else if (/couple/.test(qtyStr)) qty = 2;
+  else if (/few/.test(qtyStr)) qty = 3;
+  else if (/^an?$/.test(qtyStr)) qty = 1;
+  else qty = wordsToNumber(qtyStr);
+  if (qty == null || qty <= 0) return null;
+  if (/^sec/.test(unit)) return qty * 1000;
+  if (/^min/.test(unit)) return qty * 60 * 1000;
+  return qty * 60 * 60 * 1000; // hour(s)/hr(s)
+}
+// Detects "at <time>" with optional "tomorrow"/"tonight"/"this evening" context,
+// and rolls over to the next day automatically if the time already passed today.
+function parseAbsoluteReminder(text) {
+  const m = text.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const mn = m[2] ? parseInt(m[2], 10) : 0;
+  let mer = m[3] ? m[3].toLowerCase() : null;
+  if (h > 23 || mn > 59) return null;
+  const isTonight = /\b(tonight|this evening|in the evening)\b/i.test(text);
+  const isTomorrow = /\btomorrow\b/i.test(text);
+  // No am/pm given: assume PM for small hours or explicit "tonight/evening" context
+  if (!mer && (isTonight || (h >= 1 && h <= 7))) mer = 'pm';
+  if (mer === 'pm' && h < 12) h += 12;
+  if (mer === 'am' && h === 12) h = 0;
+  const now = new Date();
+  const due = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, mn, 0, 0);
+  if (isTomorrow) due.setDate(due.getDate() + 1);
+  else if (due.getTime() <= now.getTime()) due.setDate(due.getDate() + 1); // already passed today → tomorrow
+  return due.getTime();
+}
+// Friendly "HH:MM" (or "Tomorrow HH:MM") label for a dueAt timestamp, for the UI list.
+function formatDueLabel(dueAt) {
+  const d = new Date(dueAt);
+  const now = new Date();
+  const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+  const isTomorrow = d.getDate() !== now.getDate() || d.getMonth() !== now.getMonth() || d.getFullYear() !== now.getFullYear();
+  return (isTomorrow ? 'Tomorrow ' : '') + hh + ':' + mm;
+}
+
 function checkReminders() {
   const t=getNow(); const nowM=t.hours*60+t.minutes;
   schedule.forEach(s=>{
-    if (!s.time||s.time==='??:??'||s.reminded) return;
+    if (s.reminded) return;
+    // ★ New reminders (relative durations, rolled-over absolute times) carry an
+    // exact epoch timestamp — fire the instant we reach or pass it.
+    if (s.dueAt) {
+      if (Date.now() >= s.dueAt) { s.reminded=true; saveSchedule(); triggerReminder(s.event); }
+      return;
+    }
+    if (!s.time||s.time==='??:??') return;
     const [rh,rm]=s.time.split(':').map(Number);
     if (isNaN(rh)||isNaN(rm)) return;
     if (nowM>=rh*60+rm && nowM<=rh*60+rm+1) {
@@ -3213,17 +3484,49 @@ function checkReminders() {
 function triggerReminder(eventName) {
   const t = getNow();
   const toast = document.getElementById('reminderToast');
+  const announcement = `${config.bossName}, it's time for ${eventName}.`;
   toast.style.animation = 'toastPop 0.3s ease-out';
-  toast.innerHTML = `⏰ REMINDER<br><span style="font-size:1rem;color:var(--text)">${escHtml(eventName)}</span><br><span style="font-size:0.65rem;color:var(--text-dim)">It's ${t.timeStr}</span><br><button onclick="document.getElementById('reminderToast').style.display='none'" style="margin-top:8px;background:transparent;border:1px solid var(--red);color:var(--red);padding:4px 12px;font-family:'Orbitron',monospace;font-size:0.55rem;cursor:pointer">DISMISS</button>`;
+  toast.innerHTML = `⏰ REMINDER<br><span style="font-size:1rem;color:var(--text)">${escHtml(eventName)}</span><br><span style="font-size:0.65rem;color:var(--text-dim)">It's ${t.timeStr}</span><br><button onclick="dismissReminderToast()" style="margin-top:8px;background:transparent;border:1px solid var(--red);color:var(--red);padding:4px 12px;font-family:'Orbitron',monospace;font-size:0.55rem;cursor:pointer">DISMISS</button>`;
   toast.style.display = 'block';
-  // Keep showing until dismissed — auto-hide after 30s
+  toast.dataset.acknowledged = '0';
+  // Keep showing until dismissed — auto-hide after 30s regardless (so it never gets stuck on screen)
   clearTimeout(toast._hideTimer);
-  toast._hideTimer = setTimeout(() => { if(toast.style.display==='block') toast.style.display='none'; }, 30000);
+  toast._hideTimer = setTimeout(() => { if(toast.style.display==='block') dismissReminderToast(); }, 30000);
   addMsg('anna', `⏰ <strong>REMINDER:</strong> ${escHtml(eventName)} — It's ${t.timeStr}.`, 'proactive');
-  fridaySpeak(`Reminder, ${config.bossName}. ${eventName}.`);
+  fridaySpeak(announcement);
   playBeep();
-  if ('Notification' in window && Notification.permission === 'granted')
-    new Notification('A.N.N.A — Reminder', {body:`${eventName} — ${t.timeStr}`, requireInteraction: true});
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('A.N.N.A — Reminder', {body: announcement, requireInteraction: true});
+  } else if ('Notification' in window && Notification.permission === 'default') {
+    // Permission was never actually decided (banner dismissed, etc.) — ask again right
+    // now since this is a real reminder firing, then show the notification if granted.
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') new Notification('A.N.N.A — Reminder', {body: announcement, requireInteraction: true});
+    });
+  }
+  // ★ "Call me" behavior: like a phone call ringing, re-announce it out loud a
+  // couple more times (with a beep) if it hasn't been dismissed yet, instead of
+  // silently sitting there once and being easy to miss.
+  clearTimeout(window._reminderRepeatTimer1);
+  clearTimeout(window._reminderRepeatTimer2);
+  window._reminderRepeatTimer1 = setTimeout(() => {
+    if (toast.dataset.acknowledged === '1') return;
+    playBeep(); fridaySpeak(announcement);
+  }, 12000);
+  window._reminderRepeatTimer2 = setTimeout(() => {
+    if (toast.dataset.acknowledged === '1') return;
+    playBeep(); fridaySpeak(announcement);
+  }, 24000);
+}
+// Dismissing stops the "keeps calling until acknowledged" repeat behavior
+function dismissReminderToast() {
+  const toast = document.getElementById('reminderToast');
+  if (!toast) return;
+  toast.dataset.acknowledged = '1';
+  toast.style.display = 'none';
+  clearTimeout(toast._hideTimer);
+  clearTimeout(window._reminderRepeatTimer1);
+  clearTimeout(window._reminderRepeatTimer2);
 }
 function playBeep() {
   try {
@@ -3239,19 +3542,72 @@ function playBeep() {
   } catch(e){}
 }
 
-function handleReminder(text) {
-  const m=text.match(/at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-  let schedTime=null,display='SOON';
-  if(m){
-    let h=parseInt(m[1]),mn=m[2]?parseInt(m[2]):0,mer=m[3]?.toLowerCase();
-    if(mer==='pm'&&h<12)h+=12; if(mer==='am'&&h===12)h=0;
-    schedTime=String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0'); display=schedTime;
+// ── Lets the user (re)grant notification permission from the UI, in case the
+// automatic one-time prompt was missed, dismissed, or previously blocked ──
+function enableNotifications() {
+  const statusEl = document.getElementById('notifPermStatus');
+  if (!('Notification' in window)) {
+    if (statusEl) statusEl.textContent = '✕ Notifications not supported in this browser.';
+    return;
   }
-  const label=text.replace(/remind\s+me\s+(?:to\s+|about\s+)?/i,'').replace(/at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i,'').trim()||text;
-  if(schedTime){schedule.push({id:Date.now(),time:schedTime,event:label,reminded:false});saveSchedule();renderSchedule();}
+  if (Notification.permission === 'granted') {
+    if (statusEl) { statusEl.textContent = '✅ Notifications enabled.'; statusEl.style.color = 'var(--green)'; }
+    new Notification('A.N.N.A', {body: 'Notifications are working — reminders will alert you like this.'});
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    if (statusEl) { statusEl.textContent = '✕ Blocked by browser — enable notifications for this site in your browser settings.'; statusEl.style.color = 'var(--red)'; }
+    return;
+  }
+  Notification.requestPermission().then(p => {
+    if (!statusEl) return;
+    if (p === 'granted') { statusEl.textContent = '✅ Notifications enabled.'; statusEl.style.color = 'var(--green)'; }
+    else { statusEl.textContent = '✕ Permission not granted.'; statusEl.style.color = 'var(--red)'; }
+  });
+}
+function updateNotifPermStatus() {
+  const statusEl = document.getElementById('notifPermStatus');
+  if (!statusEl) return;
+  if (!('Notification' in window)) { statusEl.textContent = 'Not supported in this browser.'; statusEl.style.color = 'var(--text-dim)'; return; }
+  if (Notification.permission === 'granted') { statusEl.textContent = '✅ Notifications enabled.'; statusEl.style.color = 'var(--green)'; }
+  else if (Notification.permission === 'denied') { statusEl.textContent = '✕ Blocked — enable in browser site settings.'; statusEl.style.color = 'var(--red)'; }
+  else { statusEl.textContent = '— Not yet enabled. Tap to allow.'; statusEl.style.color = 'var(--gold)'; }
+}
+
+function handleReminder(text) {
+  // ★ Try relative durations first ("in 10 minutes" / "in ten minutes" / "after
+  // half an hour"), then fall back to absolute clock time ("at 6pm", with
+  // "tomorrow"/"tonight" support and automatic next-day rollover).
+  const relMs = parseRelativeDuration(text);
+  let dueAt = null, display = 'SOON';
+  if (relMs != null) {
+    dueAt = Date.now() + relMs;
+    display = formatDueLabel(dueAt);
+  } else {
+    const abs = parseAbsoluteReminder(text);
+    if (abs != null) { dueAt = abs; display = formatDueLabel(dueAt); }
+  }
+  const label = text
+    .replace(/remind\s+me\s+(?:to\s+|about\s+)?/i, '')
+    .replace(/set\s+(?:a\s+|an?\s+)?reminder\s*(?:to\s+|for\s+|about\s+)?/i, '')
+    .replace(/do\s+(?:a\s+|an?\s+)?reminder\s*(?:to\s+|for\s+|about\s+)?/i, '')
+    .replace(/notify\s+me\s*(?:to\s+|about\s+)?/i, '')
+    .replace(/(?:give|pull|send|get|shoot)\s+me\s+a\s+notification\s*(?:to\s+|about\s+|for\s+)?/i, '')
+    .replace(/alert\s+me\s*(?:to\s+|about\s+)?/i, '')
+    .replace(/\b(?:in|after)\s+(?:half(?:\s+an)?|a\s+couple(?:\s+of)?|a\s+few|an?|\d+|[a-z]+(?:[\s-][a-z]+)?)\s+(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/i, '')
+    .replace(/\bat\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i, '')
+    .replace(/\b(tomorrow|tonight|this evening|in the evening)\b/gi, '')
+    .replace(/^\s*(?:to|about)\s+/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim() || text;
+  if (dueAt) {
+    schedule.push({id:Date.now(), time: new Date(dueAt).toTimeString().slice(0,5), dueAt, event:label, reminded:false});
+    saveSchedule(); renderSchedule();
+  }
   const d=document.createElement('div'); d.className='reminder-item';
   d.innerHTML=`<span class="reminder-time">${display}</span><span style="flex:1">${escHtml(label)}</span><button class="reminder-del" onclick="this.parentElement.remove()">✕</button>`;
   document.getElementById('reminderList').appendChild(d);
+  addSystemMsg(`⏰ Reminder set: "${label}" — ${display === 'SOON' ? "couldn't detect a time, showing it here anyway" : display}.`);
 }
 function parseTimeFromText(text) {
   // Matches: "at 3pm", "at 3:30pm", "at 15:00", "3pm", "9:30 am"
@@ -3633,9 +3989,74 @@ function openModal() {
   document.getElementById('groqKey').value = config.groqKey;
   document.getElementById('bossName').value = config.bossName;
   document.getElementById('groqModel').value = config.groqModel;
+  const langSel = document.getElementById('langSelect');
+  if (langSel) langSel.value = config.language || 'en-US';
+  const genderSel = document.getElementById('voiceGenderSelect');
+  if (genderSel) genderSel.value = config.voiceGender || 'auto';
+  const styleSel = document.getElementById('voiceStyleSelect');
+  if (styleSel) styleSel.value = config.voiceStyle || 'default';
   document.getElementById('modalOverlay').classList.remove('hidden');
   // Populate mic device list
   populateMicList();
+  updateVoiceCoverageStatus();
+}
+
+// ── Shows whether the browser/OS actually has a voice installed for the
+// currently-selected language, so users immediately understand why TTS
+// might sound like English instead of their chosen language ──
+function updateVoiceCoverageStatus() {
+  const el = document.getElementById('voiceCoverageStatus');
+  if (!el) return;
+  const lang = document.getElementById('langSelect')?.value || config.language || 'en-US';
+  if (!voices.length) voices = speechSynthesis.getVoices();
+  const cov = voiceCoverage(lang);
+  const name = languageName(lang);
+  if (cov === 'exact') {
+    el.style.color = 'var(--green)';
+    el.textContent = '✅ Native ' + name + ' voice found on this device.';
+  } else if (cov === 'family') {
+    el.style.color = 'var(--gold)';
+    el.textContent = '⚠ A ' + name + '-family voice was found (may be a different accent/region).';
+  } else {
+    el.style.color = 'var(--red)';
+    el.textContent = '✕ No ' + name + ' voice installed — ANNA will fall back to an English voice for speech. Recognition/replies still work in ' + name + '; only pronunciation is affected. Install a ' + name + ' voice in your OS/browser text-to-speech settings for native pronunciation.';
+  }
+}
+
+// ── Preview the currently-selected (not-yet-saved) language/voice/style combo ──
+function testVoiceSample() {
+  const lang = document.getElementById('langSelect')?.value || config.language || 'en-US';
+  const gender = document.getElementById('voiceGenderSelect')?.value || 'auto';
+  const style = document.getElementById('voiceStyleSelect')?.value || 'default';
+  const samples = {
+    'en': "Hello, I'm ANNA. This is how I sound with these settings.",
+    'hi': "नमस्ते, मैं ANNA हूँ। मैं इस तरह बोलती हूँ।",
+    'ta': "வணக்கம், நான் ANNA. இதுதான் என் குரல்.",
+    'te': "నమస్కారం, నేను ANNA. ఇదే నా స్వరం.",
+    'kn': "ನಮಸ್ಕಾರ, ನಾನು ANNA. ಇದು ನನ್ನ ಧ್ವನಿ.",
+    'ml': "നമസ്കാരം, ഞാൻ ANNA ആണ്. ഇതാണ് എന്റെ ശബ്ദം.",
+    'bn': "নমস্কার, আমি ANNA। এটাই আমার কণ্ঠস্বর।",
+    'mr': "नमस्कार, मी ANNA आहे. हा माझा आवाज आहे.",
+    'gu': "નમસ્તે, હું ANNA છું. આ મારો અવાજ છે.",
+    'pa': "ਸਤ ਸ੍ਰੀ ਅਕਾਲ, ਮੈਂ ANNA ਹਾਂ।",
+    'ur': "ہیلو، میں اے این این اے ہوں۔",
+    'es': "Hola, soy ANNA. Así es como sueno.",
+    'fr': "Bonjour, je suis ANNA. Voici à quoi je ressemble.",
+    'de': "Hallo, ich bin ANNA. So klinge ich.",
+    'it': "Ciao, sono ANNA. Ecco come suono.",
+    'pt': "Olá, eu sou ANNA. É assim que eu soo.",
+    'ru': "Привет, я ANNA. Вот как я звучу.",
+    'zh': "你好，我是安娜。这就是我的声音。",
+    'ja': "こんにちは、アンナです。こんな声です。",
+    'ko': "안녕하세요, 저는 안나예요.",
+    'ar': "مرحبا، أنا آنا. هكذا يبدو صوتي.",
+    'tr': "Merhaba, ben ANNA. Sesim böyle.",
+    'id': "Halo, saya ANNA. Begini suara saya.",
+    'vi': "Xin chào, tôi là ANNA."
+  };
+  const short = lang.split('-')[0];
+  const text = samples[short] || samples['en'];
+  speakWithBrowser(text, { lang, gender, style });
 }
 
 async function populateMicList() {
@@ -3673,13 +4094,23 @@ async function saveConfig() {
   const bn = document.getElementById('bossName').value.trim();
   const gm = document.getElementById('groqModel').value;
   const micId = document.getElementById('micDeviceSelect')?.value || '';
+  const lang = document.getElementById('langSelect')?.value || 'en-US';
+  const voiceGender = document.getElementById('voiceGenderSelect')?.value || 'auto';
+  const voiceStyle = document.getElementById('voiceStyleSelect')?.value || 'default';
   const wasEmpty = !config.groqKey;
   const micChanged = micId !== config.preferredMicId;
+  const langChanged = lang !== config.language;
 
   if (gk) config.groqKey = gk;
   if (bn) config.bossName = bn;
   config.groqModel = gm;
   config.preferredMicId = micId;
+  config.language = lang;
+  config.voiceGender = voiceGender;
+  config.voiceStyle = voiceStyle;
+
+  // Language change means the always-on recognizer needs to be rebuilt with the new lang
+  if (langChanged) { window.srRecognition = null; tapSRWarmed = false; }
 
   dbSet('anna_config', config);
   // Also save to regular localStorage key for backward compat
@@ -3700,6 +4131,12 @@ async function saveConfig() {
     } catch(e) {
       addSystemMsg('⚠ Could not open mic: ' + e.message);
     }
+  }
+
+  if (langChanged) {
+    const langLabel = document.getElementById('langSelect')?.selectedOptions?.[0]?.text || config.language;
+    addSystemMsg('🌐 Language switched to ' + langLabel + '. Listening and speaking will now use this language.');
+    if (isAlwaysOn) { window.srPending = false; _restartSR(400); }
   }
 
   addSystemMsg(`Configuration saved. Hello, ${config.bossName}.`);
