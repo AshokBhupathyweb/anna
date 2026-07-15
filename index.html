@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1270,8 +1271,12 @@
         <input type="checkbox" id="slangModeToggle" checked style="width:14px;height:14px;accent-color:var(--arc);cursor:pointer;">
         🗣️ Native slang &amp; everyday speech <span style="color:var(--text-dim);font-size:0.52rem;">— ANNA talks like a real native speaker (casual idioms, contractions, local expressions) instead of textbook-formal language, in every language above</span>
       </label>
+      <label style="display:flex;align-items:center;gap:7px;margin-top:10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text);">
+        <input type="checkbox" id="deviceDefaultVoiceToggle" checked style="width:14px;height:14px;accent-color:var(--green);cursor:pointer;" onchange="onDeviceDefaultVoiceToggle()">
+        📱 Use device's default voice <span style="color:var(--text-dim);font-size:0.52rem;">— ON by default. ANNA just speaks with whatever voice your phone/browser already uses by default, instead of hunting for a language/gender match. Fixes false "no voice installed" warnings, especially as an installed app. Turn OFF to manually pick language/gender/style below.</span>
+      </label>
     </div>
-    <div class="form-group">
+    <div class="form-group" id="voicePersonaGroup">
       <label class="form-label">🗣 VOICE PERSONA <span style="color:var(--text-dim);font-size:0.5rem;font-family:'Share Tech Mono',monospace;letter-spacing:0.05em"> — pick a voice character</span></label>
       <div style="display:flex;gap:6px;">
         <select class="form-input" id="voiceGenderSelect" style="flex:1;" onchange="updateVoiceCoverageStatus()">
@@ -1333,7 +1338,12 @@ let config = {
   language: 'en-US',      // ← speaking + listening language (BCP-47 code)
   voiceGender: 'auto',    // ← 'auto' | 'female' | 'male'
   voiceStyle: 'default',  // ← 'default' | 'sweet' | 'rough' | 'energetic' | 'calm'
-  useSlang: true          // ← true = reply with native, everyday slang/idioms instead of textbook/formal language
+  useSlang: true,         // ← true = reply with native, everyday slang/idioms instead of textbook/formal language
+  useDeviceDefaultVoice: true // ← true (default) = skip language/gender voice-matching entirely and just
+                               //   speak with whatever voice the phone/OS already has set as its default.
+                               //   Prevents false "No voice installed" warnings, especially when this is
+                               //   packaged/installed as an app, where the voice list can be slow/incomplete
+                               //   on first launch.
 };
 
 // Load saved config from localStorage synchronously (instant, before IndexedDB loads)
@@ -1347,6 +1357,7 @@ try {
   if (saved.voiceGender) config.voiceGender = saved.voiceGender;
   if (saved.voiceStyle) config.voiceStyle = saved.voiceStyle;
   if (typeof saved.useSlang === 'boolean') config.useSlang = saved.useSlang;
+  if (typeof saved.useDeviceDefaultVoice === 'boolean') config.useDeviceDefaultVoice = saved.useDeviceDefaultVoice;
 } catch(e) {}
 
 // ─── MIC AUDIO CONSTRAINTS — always uses selected mic device if set ───
@@ -2496,6 +2507,29 @@ function pickBestVoice(lang, gender, style) {
   lang   = lang   || config.language   || 'en-US';
   gender = gender || config.voiceGender|| 'auto';
   style  = style  || config.voiceStyle || 'default';
+
+  // ★ DEVICE DEFAULT VOICE MODE (default: ON) — bypasses all language/coverage
+  // matching below and just speaks with whatever voice the phone/OS/browser
+  // already has marked as its own default. This is the safest choice when the
+  // page is installed/packaged as an app, where speechSynthesis.getVoices()
+  // can report an incomplete or empty voice list right after launch, which
+  // previously produced a false "No voice installed" warning even for English.
+  if (config.useDeviceDefaultVoice) {
+    let wantGender = gender;
+    if (wantGender === 'auto') {
+      if (style === 'rough') wantGender = 'male';
+      else if (style === 'sweet') wantGender = 'female';
+    }
+    const def = voices.find(v => v.default) || voices[0] || null;
+    let genderMatched = true;
+    if (wantGender !== 'auto' && def) {
+      const isFemale = FEMALE_VOICE_HINTS.test(def.name);
+      const isMale = MALE_VOICE_HINTS.test(def.name);
+      genderMatched = (wantGender === 'female' && isFemale) || (wantGender === 'male' && isMale);
+    }
+    return { voice: def, coverage: def ? 'exact' : 'none', genderMatched, isDeviceDefault: true };
+  }
+
   const langShort = lang.split('-')[0].toLowerCase();
   const coverage = voiceCoverage(lang);
 
@@ -2642,7 +2676,7 @@ function speakWithBrowser(text, overrides) {
     if (wantGender === 'female') utt.pitch = Math.min(2, utt.pitch * 1.35);
     else if (wantGender === 'male') utt.pitch = Math.max(0, utt.pitch * 0.68);
   }
-  if (picked && picked.coverage === 'none' && lang.split('-')[0].toLowerCase() !== 'en') {
+  if (picked && !picked.isDeviceDefault && picked.coverage === 'none' && lang.split('-')[0].toLowerCase() !== 'en') {
     window._voiceWarnedLangs = window._voiceWarnedLangs || new Set();
     if (!window._voiceWarnedLangs.has(lang)) {
       window._voiceWarnedLangs.add(lang);
@@ -4035,9 +4069,24 @@ function openModal() {
   if (styleSel) styleSel.value = config.voiceStyle || 'default';
   const slangToggle = document.getElementById('slangModeToggle');
   if (slangToggle) slangToggle.checked = config.useSlang !== false;
+  const deviceDefToggle = document.getElementById('deviceDefaultVoiceToggle');
+  if (deviceDefToggle) deviceDefToggle.checked = config.useDeviceDefaultVoice !== false;
   document.getElementById('modalOverlay').classList.remove('hidden');
   // Populate mic device list
   populateMicList();
+  updateVoicePersonaGroupState();
+  updateVoiceCoverageStatus();
+}
+
+// ── Dims the manual Voice Persona controls while "device default voice"
+// is enabled, since gender/style matching is bypassed in that mode ──
+function updateVoicePersonaGroupState() {
+  const on = document.getElementById('deviceDefaultVoiceToggle')?.checked;
+  const grp = document.getElementById('voicePersonaGroup');
+  if (grp) grp.style.opacity = on ? '0.45' : '1';
+}
+function onDeviceDefaultVoiceToggle() {
+  updateVoicePersonaGroupState();
   updateVoiceCoverageStatus();
 }
 
@@ -4051,6 +4100,13 @@ function updateVoiceCoverageStatus() {
   const gender = document.getElementById('voiceGenderSelect')?.value || 'auto';
   const style = document.getElementById('voiceStyleSelect')?.value || 'default';
   refreshVoices();
+  const deviceDefaultOn = document.getElementById('deviceDefaultVoiceToggle')?.checked;
+  if (deviceDefaultOn) {
+    const def = voices.find(v => v.default) || voices[0] || null;
+    el.style.color = 'var(--green)';
+    el.textContent = '✅ Using your device\'s default voice' + (def ? ' — "' + def.name + '"' : ' (will use whatever voice your device provides)') + '. Turn off "Use device\'s default voice" above to manually pick a language/gender match instead.';
+    return;
+  }
   const cov = voiceCoverage(lang);
   const name = languageName(lang);
   const picked = pickBestVoice(lang, gender, style);
@@ -4103,7 +4159,12 @@ function testVoiceSample() {
   };
   const short = lang.split('-')[0];
   const text = samples[short] || samples['en'];
+  // Preview should reflect the (not-yet-saved) checkbox state in the modal, not the saved config
+  const prevDeviceDefault = config.useDeviceDefaultVoice;
+  const liveToggle = document.getElementById('deviceDefaultVoiceToggle');
+  if (liveToggle) config.useDeviceDefaultVoice = liveToggle.checked;
   speakWithBrowser(text, { lang, gender, style });
+  config.useDeviceDefaultVoice = prevDeviceDefault;
 }
 
 async function populateMicList() {
@@ -4145,6 +4206,7 @@ async function saveConfig() {
   const voiceGender = document.getElementById('voiceGenderSelect')?.value || 'auto';
   const voiceStyle = document.getElementById('voiceStyleSelect')?.value || 'default';
   const useSlang = document.getElementById('slangModeToggle')?.checked !== false;
+  const useDeviceDefaultVoice = document.getElementById('deviceDefaultVoiceToggle')?.checked !== false;
   const wasEmpty = !config.groqKey;
   const micChanged = micId !== config.preferredMicId;
   const langChanged = lang !== config.language;
@@ -4157,6 +4219,7 @@ async function saveConfig() {
   config.voiceGender = voiceGender;
   config.voiceStyle = voiceStyle;
   config.useSlang = useSlang;
+  config.useDeviceDefaultVoice = useDeviceDefaultVoice;
 
   // Language change means the always-on recognizer needs to be rebuilt with the new lang
   if (langChanged) { window.srRecognition = null; tapSRWarmed = false; }
