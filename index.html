@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1264,18 +1263,23 @@
         </optgroup>
       </select>
       <div id="voiceCoverageStatus" style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;margin-top:5px;min-height:14px;"></div>
+      <button type="button" onclick="refreshVoices(); updateVoiceCoverageStatus();" style="margin-top:6px;background:var(--arc-deep);border:1px solid var(--arc);color:var(--arc);font-family:'Orbitron',monospace;font-size:0.5rem;padding:6px 10px;cursor:pointer;" title="Re-scan installed voices after adding one in your OS settings">↻ REFRESH VOICE LIST</button>
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:4px">For non-English languages ANNA automatically uses the smarter 70B model for replies (the fast 8B model often ignores non-English instructions), even if a faster model is selected below.</div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:4px">Voice recognition, TTS voice, and ANNA's replies all switch to this language. Actual voice availability depends on your device/browser's installed voices.</div>
+      <label style="display:flex;align-items:center;gap:7px;margin-top:10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text);">
+        <input type="checkbox" id="slangModeToggle" checked style="width:14px;height:14px;accent-color:var(--arc);cursor:pointer;">
+        🗣️ Native slang &amp; everyday speech <span style="color:var(--text-dim);font-size:0.52rem;">— ANNA talks like a real native speaker (casual idioms, contractions, local expressions) instead of textbook-formal language, in every language above</span>
+      </label>
     </div>
     <div class="form-group">
       <label class="form-label">🗣 VOICE PERSONA <span style="color:var(--text-dim);font-size:0.5rem;font-family:'Share Tech Mono',monospace;letter-spacing:0.05em"> — pick a voice character</span></label>
       <div style="display:flex;gap:6px;">
-        <select class="form-input" id="voiceGenderSelect" style="flex:1;">
+        <select class="form-input" id="voiceGenderSelect" style="flex:1;" onchange="updateVoiceCoverageStatus()">
           <option value="auto">Auto</option>
           <option value="female">Female</option>
           <option value="male">Male</option>
         </select>
-        <select class="form-input" id="voiceStyleSelect" style="flex:1;">
+        <select class="form-input" id="voiceStyleSelect" style="flex:1;" onchange="updateVoiceCoverageStatus()">
           <option value="default">Default — Warm</option>
           <option value="sweet">Sweet &amp; Soft</option>
           <option value="rough">Rough &amp; Deep</option>
@@ -1283,6 +1287,7 @@
           <option value="calm">Calm &amp; Slow</option>
         </select>
       </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);margin-top:4px">Both Male and Female are always available for every language above — if your device has no matching-gender voice installed, ANNA synthesizes one by re-pitching the closest available voice so you still get a natural-sounding male/female choice.</div>
       <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
         <button type="button" onclick="testVoiceSample()" style="background:rgba(0,212,255,0.08);border:1px solid var(--arc);color:var(--arc);font-family:'Orbitron',monospace;font-size:0.52rem;padding:6px 12px;cursor:pointer;white-space:nowrap;">🔊 TEST VOICE</button>
         <span style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);">Preview before saving</span>
@@ -1327,7 +1332,8 @@ let config = {
   preferredMicId: '', // ← mic device ID — empty = system default
   language: 'en-US',      // ← speaking + listening language (BCP-47 code)
   voiceGender: 'auto',    // ← 'auto' | 'female' | 'male'
-  voiceStyle: 'default'   // ← 'default' | 'sweet' | 'rough' | 'energetic' | 'calm'
+  voiceStyle: 'default',  // ← 'default' | 'sweet' | 'rough' | 'energetic' | 'calm'
+  useSlang: true          // ← true = reply with native, everyday slang/idioms instead of textbook/formal language
 };
 
 // Load saved config from localStorage synchronously (instant, before IndexedDB loads)
@@ -1340,6 +1346,7 @@ try {
   if (saved.language) config.language = saved.language;
   if (saved.voiceGender) config.voiceGender = saved.voiceGender;
   if (saved.voiceStyle) config.voiceStyle = saved.voiceStyle;
+  if (typeof saved.useSlang === 'boolean') config.useSlang = saved.useSlang;
 } catch(e) {}
 
 // ─── MIC AUDIO CONSTRAINTS — always uses selected mic device if set ───
@@ -2449,17 +2456,28 @@ function prefetchVoices() {
   const load = () => { voices = speechSynthesis.getVoices(); };
   load(); speechSynthesis.onvoiceschanged = load;
 }
-// Known female / male voice names across common OS + browser TTS engines
-// (used as a heuristic since SpeechSynthesisVoice doesn't expose gender directly)
-const FEMALE_VOICE_HINTS = /female|zira|samantha|karen|victoria|susan|aria|jenny|michelle|catherine|heera|raveena|kalpana|aditi|moira|tessa|fiona|amelie|paulina|ines|anna|marie|sara|elsa|nora|xiaoxiao|mei-?jia|yuna|seoyeon/i;
-const MALE_VOICE_HINTS   = /male|david|mark|guy|daniel|fred|tom|george|james|alex(?!a)|hemant|ravi|rishi|thomas|jorge|diego|xander|yannick|liam|matthew/i;
+// ★ FIX: always re-query the live voice list instead of trusting the cached
+// `voices` array. Some browsers/OSes never fire `onvoiceschanged` after a
+// language/voice pack is installed at the system level until the browser is
+// fully restarted (not just the page reloaded) — with the old "only refetch
+// if empty" logic, a Tamil (or any newly-installed) voice could stay
+// invisible to ANNA for the entire session even though it now exists.
+function refreshVoices() {
+  try { const v = speechSynthesis.getVoices(); if (v && v.length) voices = v; } catch(e) {}
+  return voices;
+}
+// Known female / male voice persona names across common OS + browser TTS engines,
+// including Microsoft Edge's Indic-language neural voices (used as a heuristic
+// since SpeechSynthesisVoice doesn't expose a `gender` property directly).
+const FEMALE_VOICE_HINTS = /female|zira|samantha|karen|victoria|susan|aria|jenny|michelle|catherine|heera|raveena|kalpana|aditi|moira|tessa|fiona|amelie|paulina|ines|anna|marie|sara|elsa|nora|xiaoxiao|mei-?jia|yuna|seoyeon|pallavi|kani|venba|swara|neerja|shruti|sapna|sobhana|aarohi|dhwani|tanishaa|uzma|gul|vidya|iniya|divya|gitanjali/i;
+const MALE_VOICE_HINTS   = /male|david|mark|guy|daniel|fred|tom|george|james|alex(?!a)|hemant|ravi|rishi|thomas|jorge|diego|xander|yannick|liam|matthew|valluvar|surya|anbu|madhur|prabhat|mohan|gagan|midhun|manohar|niranjan|bashkar|asad|salman/i;
 
 // Reports how well the current device/browser can actually speak a language:
 // 'exact'  = a voice for the precise locale (e.g. ta-IN) is installed
 // 'family' = a voice for the language exists but under a different region tag
 // 'none'   = no voice at all for this language — TTS will fall back to English
 function voiceCoverage(lang) {
-  if (!voices.length) voices = speechSynthesis.getVoices();
+  refreshVoices();
   const langShort = lang.split('-')[0].toLowerCase();
   if (voices.some(v => v.lang && v.lang.toLowerCase() === lang.toLowerCase())) return 'exact';
   if (voices.some(v => v.lang && v.lang.toLowerCase().startsWith(langShort))) return 'family';
@@ -2467,10 +2485,14 @@ function voiceCoverage(lang) {
 }
 
 // gender: 'auto' | 'female' | 'male'   style: 'default'|'sweet'|'rough'|'energetic'|'calm'
-// Returns { voice, coverage } — coverage tells the caller whether the returned
-// voice actually speaks the requested language, or is just an English fallback.
+// Returns { voice, coverage, genderMatched } — coverage tells the caller whether the returned
+// voice actually speaks the requested language, or is just an English fallback. genderMatched
+// tells the caller whether we found a REAL voice matching the requested gender, or whether the
+// caller should simulate that gender (via pitch-shifting) on top of whatever voice we found —
+// this is what guarantees a male AND a female option always exist, for every language, even on
+// devices/browsers that only ship a single voice for that language.
 function pickBestVoice(lang, gender, style) {
-  if (!voices.length) voices = speechSynthesis.getVoices();
+  refreshVoices();
   lang   = lang   || config.language   || 'en-US';
   gender = gender || config.voiceGender|| 'auto';
   style  = style  || config.voiceStyle || 'default';
@@ -2492,25 +2514,27 @@ function pickBestVoice(lang, gender, style) {
   if (!pool.length) pool = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
   // 4) absolute fallback — whatever the platform gives us
   if (!pool.length) pool = voices.slice();
-  if (!pool.length) return { voice: null, coverage };
+  if (!pool.length) return { voice: null, coverage, genderMatched: false };
 
   if (wantGender === 'female') {
     const f = pool.filter(v => FEMALE_VOICE_HINTS.test(v.name) && !MALE_VOICE_HINTS.test(v.name));
-    if (f.length) return { voice: f[0], coverage };
+    if (f.length) return { voice: f[0], coverage, genderMatched: true };
   } else if (wantGender === 'male') {
     const m = pool.filter(v => MALE_VOICE_HINTS.test(v.name) && !FEMALE_VOICE_HINTS.test(v.name));
-    if (m.length) return { voice: m[0], coverage };
+    if (m.length) return { voice: m[0], coverage, genderMatched: true };
   }
 
-  // Preferred well-known natural-sounding voices, still constrained to the matched pool
+  // No voice explicitly tagged with the requested gender for this language pool —
+  // pick the best available voice anyway; speakWithBrowser will simulate the
+  // requested gender by pitch-shifting it, so male/female are always both offered.
   const priority = [
     v => v.name === 'Microsoft Zira - English (United States)',
     v => v.name === 'Google US English',
     v => v.name === 'Samantha',
     v => v.default,
   ];
-  for (const test of priority) { const f = pool.find(test); if (f) return { voice: f, coverage }; }
-  return { voice: pool[0], coverage };
+  for (const test of priority) { const f = pool.find(test); if (f) return { voice: f, coverage, genderMatched: wantGender === 'auto' }; }
+  return { voice: pool[0], coverage, genderMatched: wantGender === 'auto' };
 }
 
 // Rate/pitch shaping per voice "style" — browsers can't truly re-texture a voice,
@@ -2607,6 +2631,16 @@ function speakWithBrowser(text, overrides) {
     utt.lang = voice.lang || lang;
   } else {
     utt.lang = lang;
+  }
+  // ★ Guarantee male AND female voices for every language: if the device/browser
+  // doesn't ship a voice explicitly tagged with the requested gender for this
+  // language, simulate it by shifting pitch on top of whatever voice we did get —
+  // higher/brighter for female, lower/deeper for male — so both options always
+  // sound distinct and natural, not the same single robotic voice for everyone.
+  const wantGender = gender === 'auto' ? null : gender;
+  if (wantGender && picked && !picked.genderMatched) {
+    if (wantGender === 'female') utt.pitch = Math.min(2, utt.pitch * 1.35);
+    else if (wantGender === 'male') utt.pitch = Math.max(0, utt.pitch * 0.68);
   }
   if (picked && picked.coverage === 'none' && lang.split('-')[0].toLowerCase() !== 'en') {
     window._voiceWarnedLangs = window._voiceWarnedLangs || new Set();
@@ -2820,8 +2854,12 @@ const FRIDAY_SYS = () => {
 ⚠ LANGUAGE — HIGHEST PRIORITY RULE, FOLLOW EXACTLY:
 Respond ONLY in ${langName}, written in native ${langName} script (never Romanized/transliterated, never English), unless ${config.bossName}'s message is clearly written in a different language — then reply in that language instead. Do not mix English words in unless they are proper nouns with no ${langName} equivalent. Do not translate word-for-word; write naturally as a native ${langName} speaker would.
 `;
+  const slangBlock = config.useSlang !== false ? `
+NATIVE SLANG & TONE (advanced NLP): Talk like a real native ${langName} speaker on the street, not a textbook or a formal announcer. Use everyday colloquialisms, contractions, filler words, regional idioms, and casual native slang that people from that language/culture actually use in daily conversation — the way ${config.bossName}'s close friend or family member would talk, not a customer-service script. Match the register to context: casual and playful for everyday chat, dial it back to respectful/native-formal only for serious or professional topics. This applies in EVERY language ANNA speaks, not just English — pull from real native slang/idiom for that specific language and region, never a stiff literal translation of English slang.` : `
+TONE: Speak in clear, natural, everyday ${langName} — friendly and conversational, but neutral (avoid heavy slang unless ${config.bossName} uses it first).`;
   return `You are A.N.N.A (Adaptive Neural Network Assistant), an advanced AI personal assistant. You assist ${config.bossName}.
-${langBlock}
+${langBlock}${slangBlock}
+
 PERSONALITY: Warm, caring, professional, witty. Like a real personal assistant who genuinely knows you. Speak naturally — responses go to voice TTS, so NO bullet lists, NO asterisks, NO markdown symbols. Use "${config.bossName}" naturally. Proactively suggest: "Want me to add that to your tasks?" "Shall I set a reminder for that?"
 
 LANGUAGE: Reply only in ${languageName(config.language)} (unless ${config.bossName} clearly writes/speaks in a different language, in which case switch to match them naturally for that reply). Keep it natural and conversational in that language — no literal word-for-word translation feel.
@@ -3995,6 +4033,8 @@ function openModal() {
   if (genderSel) genderSel.value = config.voiceGender || 'auto';
   const styleSel = document.getElementById('voiceStyleSelect');
   if (styleSel) styleSel.value = config.voiceStyle || 'default';
+  const slangToggle = document.getElementById('slangModeToggle');
+  if (slangToggle) slangToggle.checked = config.useSlang !== false;
   document.getElementById('modalOverlay').classList.remove('hidden');
   // Populate mic device list
   populateMicList();
@@ -4008,18 +4048,25 @@ function updateVoiceCoverageStatus() {
   const el = document.getElementById('voiceCoverageStatus');
   if (!el) return;
   const lang = document.getElementById('langSelect')?.value || config.language || 'en-US';
-  if (!voices.length) voices = speechSynthesis.getVoices();
+  const gender = document.getElementById('voiceGenderSelect')?.value || 'auto';
+  const style = document.getElementById('voiceStyleSelect')?.value || 'default';
+  refreshVoices();
   const cov = voiceCoverage(lang);
   const name = languageName(lang);
+  const picked = pickBestVoice(lang, gender, style);
+  const voiceName = picked && picked.voice ? picked.voice.name : null;
+  const genderNote = (gender !== 'auto' && picked && !picked.genderMatched)
+    ? ' (no native ' + gender + ' voice for ' + name + ' — ANNA is simulating a ' + gender + ' tone by re-pitching this voice.)'
+    : '';
   if (cov === 'exact') {
     el.style.color = 'var(--green)';
-    el.textContent = '✅ Native ' + name + ' voice found on this device.';
+    el.textContent = '✅ Native ' + name + ' voice found: "' + (voiceName || '?') + '"' + genderNote;
   } else if (cov === 'family') {
     el.style.color = 'var(--gold)';
-    el.textContent = '⚠ A ' + name + '-family voice was found (may be a different accent/region).';
+    el.textContent = '⚠ A ' + name + '-family voice was found: "' + (voiceName || '?') + '" (may be a different accent/region).' + genderNote;
   } else {
     el.style.color = 'var(--red)';
-    el.textContent = '✕ No ' + name + ' voice installed — ANNA will fall back to an English voice for speech. Recognition/replies still work in ' + name + '; only pronunciation is affected. Install a ' + name + ' voice in your OS/browser text-to-speech settings for native pronunciation.';
+    el.textContent = '✕ No ' + name + ' voice installed — ANNA will fall back to "' + (voiceName || 'an English voice') + '". Recognition/replies still work in ' + name + '; only pronunciation is affected. Install a ' + name + ' voice in your OS/browser text-to-speech settings, then reopen this menu to refresh.' + genderNote;
   }
 }
 
@@ -4097,6 +4144,7 @@ async function saveConfig() {
   const lang = document.getElementById('langSelect')?.value || 'en-US';
   const voiceGender = document.getElementById('voiceGenderSelect')?.value || 'auto';
   const voiceStyle = document.getElementById('voiceStyleSelect')?.value || 'default';
+  const useSlang = document.getElementById('slangModeToggle')?.checked !== false;
   const wasEmpty = !config.groqKey;
   const micChanged = micId !== config.preferredMicId;
   const langChanged = lang !== config.language;
@@ -4108,6 +4156,7 @@ async function saveConfig() {
   config.language = lang;
   config.voiceGender = voiceGender;
   config.voiceStyle = voiceStyle;
+  config.useSlang = useSlang;
 
   // Language change means the always-on recognizer needs to be rebuilt with the new lang
   if (langChanged) { window.srRecognition = null; tapSRWarmed = false; }
