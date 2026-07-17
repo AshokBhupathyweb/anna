@@ -6209,7 +6209,7 @@ async function loadAvatarFromBlob(blob) {
 
 // ★ NEW: fraction of the model's total height (measured DOWN from the top of the
 // head) that should be visible in frame for each framing preset.
-const FRAMING_FRACTION = { head: 0.22, chest: 0.40, upper: 0.62, full: 1.0 };
+const FRAMING_FRACTION = { head: 0.27, chest: 0.40, upper: 0.62, full: 1.0 };
 
 function frameCameraOnModel(root, framing) {
   framing = framing || currentFraming || 'full';
@@ -6351,8 +6351,8 @@ function reactToText(text) {
   else if (/\bi love you\b|\bsending (you )?love\b|\byou mean so much\b|\bfrom the bottom of my heart\b|\bi adore\b|\bwith all my heart\b/.test(lower)) emo = 'love';
   else if (/not sure|hmm+|let me think|maybe|perhaps|i wonder/.test(lower)) emo = 'thinking';
   else if (/worried|concern|uh oh|that.?s (not good|bad)/.test(lower)) emo = 'worried';
-  else if (/\b(actually,? no|i disagree|not quite right|that.?s (not )?(correct|accurate)$|i.?d push back|i don.?t think so)\b/.test(lower)) emo = 'disagreeing';
-  else if (/\b(yes,|exactly|agreed|you.?re right|that.?s correct|sure thing|absolutely|spot on)\b/.test(lower)) emo = 'agreeing';
+  else if (/\b(actually,? no|i disagree|not quite right|that.?s (not )?(correct|accurate)$|i.?d push back|i don.?t think so|no+[,.!]|nope|nah|i decline|declin(e|ed|ing)|no thanks|not interested)\b/.test(lower)) emo = 'disagreeing';
+  else if (/\b(yes[,.!]?|yeah|yep|yup|exactly|agreed|you.?re right|that.?s correct|sure thing|absolutely|spot on)\b/.test(lower)) emo = 'agreeing';
   else if (/\b(haha+|hehe+|lol+\b|lmao|hilarious|so funny|good one|😂|🤣)\b/.test(lower)) emo = 'humorous';
   // Pride/satisfaction — checked before "excited"/"happy" so completion language
   // ("deployment succeeded", "we solved it") reads as quiet pride rather than
