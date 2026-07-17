@@ -96,6 +96,14 @@
   .preview-mic-btn.recording{border-top-color:#ff3c3c;color:#ff3c3c;background:rgba(255,60,60,0.12);}
   .preview-mic-btn.recording{background:rgba(255,60,60,0.18);border-top-color:var(--red);color:var(--red);animation:vbPulse 1s ease-in-out infinite;}
 
+  /* ★ NEW: persistent TALK button for the main LIVE AVATAR view itself (not just
+     once floated) — pinned to the bottom of the box on both mobile and desktop,
+     so you can tap-to-talk to ANNA while looking at her without needing FLOAT. */
+  .live-talk-btn{width:100%;height:40px;flex-shrink:0;background:rgba(255,59,92,0.1);border:none;border-top:1px solid #ff3b5c;color:#ff3b5c;font-family:'Orbitron',monospace;font-size:0.6rem;letter-spacing:0.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;touch-action:manipulation;position:sticky;bottom:0;z-index:3;}
+  .live-talk-btn:hover{background:rgba(255,59,92,0.2);}
+  .live-talk-btn.recording{border-top-color:#ff3c3c;color:#ff3c3c;background:rgba(255,60,60,0.18);animation:vbPulse 1s ease-in-out infinite;}
+  @media (max-width:620px){ .live-talk-btn{height:46px;font-size:0.62rem;} }
+
   /* MAIN */
   .main{flex:1;display:flex;overflow:hidden;position:relative;}
   /* ★ FIX: .main used to have z-index:1, which — because position:relative +
@@ -1375,6 +1383,7 @@
       <span id="avatarStatusLine">Idle</span>
       <span>Reactions &amp; lip-sync follow whatever ANNA says out loud</span>
     </div>
+    <button type="button" class="live-talk-btn" id="liveTalkBtn" onclick="toggleTapTalk()" title="Tap to talk to ANNA">🎙 TALK</button>
   </div>
 </div>
 
@@ -2021,6 +2030,12 @@ setInterval(() => {
     b.textContent = label;
     b.className = cls;
   });
+  // ★ NEW: persistent LIVE-mode TALK button (main modal, not just floated)
+  const liveTalkBtn = document.getElementById('liveTalkBtn');
+  if (liveTalkBtn) {
+    liveTalkBtn.textContent = label;
+    liveTalkBtn.className = 'live-talk-btn' + (recording && !speaking ? ' recording' : '');
+  }
   const statusEl = document.getElementById('floatBodyStatus');
   if (statusEl) {
     if (speaking) { statusEl.textContent = '🔊 ANNA is speaking...'; statusEl.className = 'preview-float-body speaking'; }
