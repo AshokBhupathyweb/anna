@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,6 +71,12 @@
   #cameraPreviewWrap{bottom:90px;right:260px;width:160px;border-color:var(--green);box-shadow:0 0 12px rgba(0,255,136,0.3);}
   #screenPreviewWrap{bottom:230px;right:260px;width:200px;border-color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,0.3);}
   #floatPreviewWrap{bottom:90px;right:20px;width:170px;border-color:var(--arc);box-shadow:0 0 12px rgba(0,212,255,0.35);}
+  /* ★ NEW: in-page draggable LIVE-avatar float — used on mobile/browsers without
+     Document Picture-in-Picture support, so 📌 FLOAT still works there too. */
+  #liveFloatPreviewWrap{bottom:90px;right:200px;width:160px;border-color:#ff3b5c;box-shadow:0 0 12px rgba(255,59,92,0.35);}
+  #liveFloatPreviewWrap .preview-label{color:#ff3b5c;}
+  #liveFloatCanvasWrapMobile{width:100%;height:190px;position:relative;background:#020b14;flex-shrink:0;}
+  #liveFloatCanvasWrapMobile canvas{width:100%!important;height:100%!important;display:block;}
   /* ★ FIX: drag handle so you can move the preview by its header */
   .preview-handle{display:flex;align-items:center;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.8);cursor:grab;height:22px;flex-shrink:0;user-select:none;touch-action:none;}
   .preview-handle:active{cursor:grabbing;}
@@ -664,6 +671,8 @@
     #cameraPreviewWrap{right:8px;bottom:150px;width:128px;}
     #screenPreviewWrap{right:8px;bottom:265px;width:128px;}
     #floatPreviewWrap{right:8px;bottom:150px;width:128px;}
+    #liveFloatPreviewWrap{right:8px;bottom:380px;width:128px;}
+    #liveFloatCanvasWrapMobile{height:150px;}
     .preview-video{height:68px;}
     .preview-float-body{min-height:44px;font-size:0.48rem;padding:6px;}
     .preview-handle{height:26px;}
@@ -1039,6 +1048,17 @@
   </div>
   <div class="preview-float-body" id="floatBodyStatus">Floating — tap TALK to speak to me anytime.</div>
   <button class="preview-mic-btn" id="floatMicBtn" onclick="toggleTapTalk()" title="Tap to talk to ANNA">🎙 TALK</button>
+</div>
+<!-- ★ NEW: mobile/no-PiP fallback for the LIVE avatar's 📌 FLOAT button — same
+     draggable-handle + working TALK button pattern as the widgets above, but
+     holds the actual live 3D canvas instead of a video/status line. -->
+<div class="floating-preview" id="liveFloatPreviewWrap">
+  <div class="preview-handle" id="liveFloatHandle">
+    <span class="preview-label">📌 LIVE — drag here</span>
+    <button class="preview-close" onclick="closeLiveFloatMobile()">✕</button>
+  </div>
+  <div id="liveFloatCanvasWrapMobile"></div>
+  <button class="preview-mic-btn" id="liveFloatMicBtn" onclick="toggleTapTalk()" title="Tap to talk to ANNA">🎙 TALK</button>
 </div>
 
 <div class="topbar">
@@ -2029,6 +2049,7 @@ function initDraggable() {
   makeDraggable(document.getElementById('cameraPreviewWrap'), document.getElementById('camHandle'));
   makeDraggable(document.getElementById('screenPreviewWrap'), document.getElementById('scrHandle'));
   makeDraggable(document.getElementById('floatPreviewWrap'), document.getElementById('floatHandle'));
+  makeDraggable(document.getElementById('liveFloatPreviewWrap'), document.getElementById('liveFloatHandle'));
 }
 // Hide the SCREEN button entirely on devices that can't screen-share (most phones) —
 // avoids a dead button that always fails, and reduces mobile topbar clutter.
@@ -6575,6 +6596,7 @@ window.toggleLiveAvatar = async function () {
 let liveDocPipWindow = null;
 let liveCanvasHomeParent = null;
 let liveCanvasHomeNextSibling = null;
+let liveMobileFloatActive = false; // ★ NEW: in-page fallback float state (no Document PiP)
 
 function updateLiveFloatButtonUI(active) {
   const btn = document.getElementById('liveFloatBtn');
@@ -6583,18 +6605,77 @@ function updateLiveFloatButtonUI(active) {
   btn.innerHTML = active ? '📌 FLOATING' : '📌 FLOAT';
 }
 
+// ── ★ NEW: mobile / no-PiP fallback ──────────────────────────────────────
+// Document Picture-in-Picture (a real always-on-top OS window) only exists on
+// desktop Chrome/Edge — it's not available on mobile browsers at all. Rather
+// than tell mobile users FLOAT just doesn't work, this moves the same live
+// <canvas> node (keeping its WebGL context, same as the PiP path) into the
+// small draggable widget defined in the HTML (#liveFloatPreviewWrap), which
+// behaves like the existing CAMERA/SCREEN/chat-FLOAT draggable previews and
+// works everywhere touch/mouse drag does.
+function startLiveFloatMobile() {
+  const canvas = document.getElementById('liveAvatarCanvas');
+  const wrap = document.getElementById('liveFloatPreviewWrap');
+  const canvasWrap = document.getElementById('liveFloatCanvasWrapMobile');
+  const micBtn = document.getElementById('liveFloatMicBtn');
+  if (!canvas || !wrap || !canvasWrap) return;
+
+  liveCanvasHomeParent = canvas.parentElement;
+  liveCanvasHomeNextSibling = canvas.nextSibling;
+  canvasWrap.appendChild(canvas); // move the live node — keeps its WebGL context
+
+  const overlay = document.getElementById('liveAvatarOverlay');
+  if (overlay) overlay.classList.add('hidden');
+
+  wrap.style.display = 'flex';
+  requestAnimationFrame(resizeRenderer);
+
+  if (window._liveFloatSyncTimer) clearInterval(window._liveFloatSyncTimer);
+  window._liveFloatSyncTimer = setInterval(() => {
+    if (!liveMobileFloatActive || !micBtn) { clearInterval(window._liveFloatSyncTimer); return; }
+    if (isSpeaking) { micBtn.textContent = '🔊 SPEAKING'; micBtn.classList.remove('recording'); }
+    else if (isTapRecording) { micBtn.textContent = '🔴 STOP'; micBtn.classList.add('recording'); }
+    else { micBtn.textContent = '🎙 TALK'; micBtn.classList.remove('recording'); }
+  }, 300);
+
+  liveMobileFloatActive = true;
+  updateLiveFloatButtonUI(true);
+  addSystemMsg('The live avatar is floating — drag it anywhere and tap TALK to speak to me while you use the rest of the app.');
+}
+
+function closeLiveFloatMobile() {
+  if (!liveMobileFloatActive) return;
+  const canvas = document.getElementById('liveAvatarCanvas');
+  const wrap = document.getElementById('liveFloatPreviewWrap');
+  if (window._liveFloatSyncTimer) { clearInterval(window._liveFloatSyncTimer); window._liveFloatSyncTimer = null; }
+  if (canvas && liveCanvasHomeParent) {
+    if (liveCanvasHomeNextSibling) liveCanvasHomeParent.insertBefore(canvas, liveCanvasHomeNextSibling);
+    else liveCanvasHomeParent.appendChild(canvas);
+  }
+  if (wrap) wrap.style.display = 'none';
+  liveMobileFloatActive = false;
+  updateLiveFloatButtonUI(false);
+  requestAnimationFrame(resizeRenderer);
+}
+window.closeLiveFloatMobile = closeLiveFloatMobile;
+
 async function toggleLiveFloat() {
   // Already floating — closing the PiP window fires 'pagehide' below, which
   // does all the cleanup/canvas-restore work.
   if (liveDocPipWindow) { liveDocPipWindow.close(); return; }
+  // Already floating in-page (mobile fallback) — just close it.
+  if (liveMobileFloatActive) { closeLiveFloatMobile(); return; }
 
-  if (!('documentPictureInPicture' in window)) {
-    addSystemMsg('Floating the live avatar needs Document Picture-in-Picture support (desktop Chrome/Edge 116+). On other browsers/mobile, keep the LIVE panel open instead — or use 📌 FLOAT for the chat bubble.');
-    return;
-  }
   const canvas = document.getElementById('liveAvatarCanvas');
   if (!canvas || !currentRoot) {
     addSystemMsg('Load an avatar into LIVE first (📂 CHOOSE AVATAR FILE), then float it.');
+    return;
+  }
+
+  if (!('documentPictureInPicture' in window)) {
+    // No real OS-level PiP on this browser (all mobile browsers, some desktop
+    // ones) — use the in-page draggable widget instead so FLOAT still works.
+    startLiveFloatMobile();
     return;
   }
 
