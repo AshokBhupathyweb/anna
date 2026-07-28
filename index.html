@@ -241,6 +241,18 @@
   .send-btn{width:40px;height:40px;background:var(--arc-deep);border:1px solid var(--arc);color:var(--arc);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);}
   .send-btn:hover{background:rgba(0,212,255,0.18);box-shadow:0 0 12px var(--arc-glow);}
   .send-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .send-btn.stop-mode{background:rgba(255,60,60,0.12);border-color:var(--red);color:var(--red);}
+  .send-btn.stop-mode:hover{background:rgba(255,60,60,0.22);box-shadow:0 0 12px rgba(255,60,60,0.4);}
+  .attach-btn{width:34px;height:34px;background:transparent;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;border-radius:4px;font-size:0.9rem;}
+  .attach-btn:hover{border-color:var(--arc);color:var(--arc);background:var(--arc-deep);}
+  .attach-preview-bar{display:none;flex-wrap:wrap;gap:6px;padding:6px 2px;}
+  .attach-preview-bar.active{display:flex;}
+  .attach-thumb{position:relative;width:52px;height:52px;border-radius:4px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;}
+  .attach-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .attach-thumb .attach-remove{position:absolute;top:1px;right:1px;width:16px;height:16px;background:rgba(0,4,10,0.8);color:var(--red);border:none;border-radius:50%;font-size:0.6rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .chat-input-area.drag-over{outline:2px dashed var(--arc);outline-offset:-4px;background:rgba(0,212,255,0.05);}
+  .msg-attached-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+  .msg-attached-img{width:120px;height:120px;object-fit:cover;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;display:block;}
   /* ★ TAP / NEW (and the FILE / LOAD CHAT / EMAIL / SAVE buttons injected via JS) now
      live in their own toolbar row under the input, so they never crowd out the send
      button. Scrolls horizontally instead of shrinking to illegibly small buttons. */
@@ -307,6 +319,43 @@
   .msg.proactive .msg-bubble{border-color:rgba(255,215,0,0.3);border-left-color:var(--gold);background:rgba(255,215,0,0.04);}
   .msg-bubble code{font-family:'Share Tech Mono',monospace;font-size:0.73rem;background:rgba(0,212,255,0.08);padding:1px 4px;border-radius:2px;color:var(--arc);}
   .msg-bubble pre{background:rgba(0,0,0,0.4);border:1px solid var(--border);padding:8px;border-radius:2px;overflow-x:auto;margin:6px 0;font-family:'Share Tech Mono',monospace;font-size:0.68rem;line-height:1.5;white-space:pre-wrap;}
+
+  /* ★ AI IMAGE GENERATION */
+  .gen-image-wrap{display:flex;flex-direction:column;gap:8px;min-width:180px;}
+  .gen-image-grid{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:8px;max-width:400px;}
+  .gen-image-grid .gen-image-img{width:100%;max-width:none;}
+  .gen-image-grid .gen-image-slot{display:flex;flex-direction:column;gap:4px;}
+  .gen-image-grid .gen-image-loading{padding:20px 4px;justify-content:center;text-align:center;font-size:0.6rem;}
+  .gen-image-caption-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .gen-image-loading{display:flex;align-items:center;gap:10px;font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--text-dim);padding:6px 0;}
+  .gen-image-spinner{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--arc);animation:genImgSpin 0.8s linear infinite;flex-shrink:0;}
+  @keyframes genImgSpin{to{transform:rotate(360deg)}}
+  .gen-image-img{max-width:100%;width:320px;border-radius:4px;border:1px solid var(--border);box-shadow:0 0 20px rgba(0,212,255,0.15);cursor:zoom-in;display:block;transition:border-color 0.2s,box-shadow 0.2s;}
+  .gen-image-img:hover{border-color:var(--arc);box-shadow:0 0 30px var(--arc-glow);}
+  .gen-image-caption{font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);font-style:italic;}
+  .gen-image-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .gen-image-btn{padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Orbitron',monospace;font-size:0.55rem;letter-spacing:0.08em;cursor:pointer;border-radius:2px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;}
+  .gen-image-btn:hover{border-color:var(--arc);color:var(--arc);background:var(--arc-deep);}
+  .gen-image-error{font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--red);padding:4px 0;}
+  .gen-image-lightbox{position:fixed;inset:0;z-index:500;background:rgba(0,4,10,0.94);display:flex;align-items:center;justify-content:center;padding:30px;cursor:zoom-out;}
+  .gen-image-lightbox img{max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 0 60px rgba(0,212,255,0.3);}
+
+  /* ★ WHATSAPP-STYLE REPLY / QUOTE */
+  .msg-reply-icon{cursor:pointer;margin-left:8px;font-size:0.68rem;color:var(--text-dim);opacity:0.55;transition:opacity 0.15s,color 0.15s;user-select:none;}
+  .msg-reply-icon:hover{opacity:1;color:var(--arc);}
+  .msg.user .msg-reply-icon:hover{color:var(--gold);}
+  .msg-quote-block{border-left:3px solid var(--arc);background:rgba(0,212,255,0.07);padding:5px 9px;margin-bottom:6px;border-radius:2px;cursor:pointer;max-width:100%;}
+  .msg.user .msg-quote-block{border-left-color:var(--gold);background:rgba(255,215,0,0.07);}
+  .msg-quote-block .mq-name{display:block;font-family:'Orbitron',monospace;font-size:0.55rem;letter-spacing:0.05em;color:var(--arc);margin-bottom:2px;}
+  .msg.user .msg-quote-block .mq-name{color:var(--gold);}
+  .msg-quote-block .mq-text{display:block;font-size:0.68rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .reply-preview-bar{display:none;align-items:center;gap:8px;background:rgba(0,212,255,0.07);border:1px solid var(--border);border-left:3px solid var(--arc);border-radius:4px;padding:7px 10px;margin-bottom:8px;}
+  .reply-preview-bar.active{display:flex;}
+  .reply-preview-bar .rp-content{flex:1;min-width:0;}
+  .reply-preview-bar .rp-name{display:block;font-family:'Orbitron',monospace;font-size:0.58rem;letter-spacing:0.05em;color:var(--arc);margin-bottom:2px;}
+  .reply-preview-bar .rp-text{display:block;font-size:0.7rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .reply-preview-bar .rp-cancel{background:transparent;border:none;color:var(--text-dim);font-size:1rem;line-height:1;cursor:pointer;padding:2px 6px;flex-shrink:0;}
+  .reply-preview-bar .rp-cancel:hover{color:var(--red);}
 
   /* ══════════════════════════════════════════
      INTRO / BOOT SCREEN
@@ -813,6 +862,7 @@
         <span class="credit-tech-pill highlight">Claude AI</span>
         <span class="credit-tech-pill highlight">ChatGPT</span>
         <span class="credit-tech-pill highlight">Groq API</span>
+        <span class="credit-tech-pill highlight">Pollinations.ai</span>
         <span class="credit-tech-pill">HTML5</span>
         <span class="credit-tech-pill">CSS3</span>
         <span class="credit-tech-pill">JavaScript</span>
@@ -1056,6 +1106,19 @@
   </div>
 </div>
 
+<!-- ══════════════════ IMAGE GENERATOR MODAL ══════════════════ -->
+<div class="chat-save-modal" id="imageGenModal" onclick="if(event.target===this)closeImageGenModal()">
+  <div class="chat-save-box" style="width:440px;max-width:94vw;border-color:#a855f7;box-shadow:0 0 40px rgba(168,85,247,0.3);">
+    <div class="chat-save-title" style="color:#a855f7;">🎨 GENERATE IMAGE</div>
+    <div class="chat-save-sub">// describe what you want ANNA to create</div>
+    <textarea id="imageGenPromptInput" rows="3" placeholder='e.g. "a neon cyberpunk city at night", "a golden retriever puppy in the snow"' style="width:100%;background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.72rem;padding:10px;outline:none;resize:none;line-height:1.6;border-radius:4px;margin-bottom:16px;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();confirmImageGenModal();}"></textarea>
+    <div class="modal-actions">
+      <button class="btn-primary" style="border-color:#a855f7;color:#a855f7;" onclick="confirmImageGenModal()">✓ GENERATE</button>
+      <button class="btn-secondary" onclick="closeImageGenModal()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
 <div id="connectionBanner">⚠ Connection lost — retrying automatically… <button onclick="document.getElementById('connectionBanner').style.display='none'" style="background:transparent;border:1px solid var(--red);color:var(--red);padding:2px 8px;font-size:0.6rem;cursor:pointer;font-family:'Orbitron',monospace">DISMISS</button></div>
 <div class="mic-banner hidden" id="micBanner">
   <span>🎙 Grant microphone access — ANNA needs this to listen to you</span>
@@ -1129,6 +1192,7 @@
     </div>
     <button class="api-setup-btn" onclick="openModal()">⚙ CONFIG</button>
     <button class="api-setup-btn" onclick="openFileCreator()" style="border-color:var(--gold);color:var(--gold)" title="Create a new file">✨ CREATE</button>
+    <button class="api-setup-btn" onclick="promptImageGen()" style="border-color:#a855f7;color:#a855f7" title="Generate an AI image">🎨 IMAGE</button>
     <button class="api-setup-btn" onclick="toggleCredits()" style="border-color:var(--gold);color:var(--gold)">🤖 CREDITS</button>
   </div>
   <button class="panel-toggle-btn" id="btnToggleRight" onclick="toggleRightPanel()" title="Session / Memory">📊</button>
@@ -1190,9 +1254,19 @@
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-area">
+      <div class="reply-preview-bar" id="replyPreviewBar">
+        <div class="rp-content">
+          <span class="rp-name" id="replyPreviewName"></span>
+          <span class="rp-text" id="replyPreviewText"></span>
+        </div>
+        <button class="rp-cancel" onclick="cancelReply()" title="Cancel reply">✕</button>
+      </div>
+      <div class="attach-preview-bar" id="attachPreviewBar"></div>
       <div class="input-row">
-        <textarea class="chat-input" id="chatInput" placeholder="Type or speak to ANNA..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        <input type="file" id="imageAttachInput" accept="image/*" multiple style="display:none" onchange="handleImageAttachSelect(this)">
+        <button class="attach-btn" id="attachBtn" onclick="document.getElementById('imageAttachInput').click()" title="Attach image">📎</button>
+        <textarea class="chat-input" id="chatInput" placeholder="Type or speak to ANNA... (paste or attach an image too)" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="handleSendOrStop()" title="Send">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
@@ -1200,7 +1274,7 @@
         <button class="voice-btn" id="tapTalkBtn" onclick="toggleTapTalk()">🎙 TAP</button>
         <button class="voice-btn" id="newChatBtn" onclick="newChat()" title="Clear all messages — start fresh" style="border-color:var(--red);color:var(--red);opacity:0.75;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">🗑 NEW</button>
       </div>
-      <div class="input-hint">🎙 TAP = record · Say "add task X" · "delete task X" · "note: X" · "delete notes X" · "remind me at 3pm X" · 🗑 NEW = clear chat · 💾 SAVE CHAT = export · ENTER = send</div>
+      <div class="input-hint">🎙 TAP = record · 📎/paste/drag = attach image · ENTER = send · click ⬛ to stop · Say "add task X" · "delete task X" · "note: X" · "remind me at 3pm X" · 🗑 NEW = clear chat</div>
     </div>
   </div>
 
@@ -1495,6 +1569,13 @@ function micAudioConstraints(extra) {
 
 // ─── STATE ───
 let tasks = [], schedule = [], mode = 'general', msgCount = 0;
+let lastImagePrompt = null; // ★ remembers the last image description so "give me more" / follow-ups work
+let isBusy = false;                 // ★ true while a chat reply or image is generating — controls send/stop button
+let currentAbortController = null;  // ★ AbortController for the in-flight Groq fetch, so Stop can cancel it
+let userStoppedGeneration = false;  // ★ set true when the user hits Stop, so callGroq doesn't auto-retry
+let imageGenToken = 0;              // ★ bumped on Stop so in-flight image generations discard their result
+let activeImageEls = [];            // ★ Image() objects currently loading, so Stop can cancel their network fetch
+let pendingImageAttachments = [];   // ★ images pasted/dropped/attached in the chat input, waiting to be sent
 let sessionStart = Date.now(), conversationHistory = [];
 let cameraStream = null, screenStream = null, micStream = null;
 let mediaRecorder = null, audioChunks = [], isTapRecording = false;
@@ -1511,7 +1592,7 @@ let srInstance = null; // single SR instance — no double-fire
 const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile|webOS/i.test(navigator.userAgent);
 let apiOnline = true, lastApiAttempt = 0;
 let cameraKeepalive = null; // interval to detect/fix camera going black
-const VISION_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+const VISION_MODEL = 'qwen/qwen3.6-27b';
 
 // ============================================================
 //  TIME
@@ -2982,14 +3063,18 @@ async function transcribeAndSend() {
 // ============================================================
 async function fetchWithTimeout(url, options, ms=20000) {
   const controller = new AbortController();
+  currentAbortController = controller;
   const timer = setTimeout(() => controller.abort(), ms);
   try {
     const res = await fetch(url, {...options, signal: controller.signal});
-    clearTimeout(timer); return res;
-  } catch(e) { clearTimeout(timer); throw e; }
+    return res;
+  } finally {
+    clearTimeout(timer);
+    if (currentAbortController === controller) currentAbortController = null;
+  }
 }
 
-const FRIDAY_SYS = () => {
+const FRIDAY_SYS = (hasImage = false) => {
   const t = getNow();
   const langName = languageName(config.language);
   const isEnglish = whisperLangCode(config.language) === 'en';
@@ -3040,6 +3125,9 @@ IMPORTANT RULES:
 - "note: X" → confirm and add it (system does it automatically)
 - "delete/remove notes X", "clear notes" → system handles it automatically
 - "delete/remove event X", "edit event X to Y" → system handles it automatically
+- ${config.bossName} CAN ask you to generate pictures (e.g. "generate an image of...", "draw...", "create a picture of...", "give me more", "3 pictures of..."). The app detects ALL of these automatically (including follow-ups like "give me more" or "another one") and renders real images directly in chat — you never need a tag for it and this text branch won't even run when it happens.
+- CRITICAL: NEVER write out fake image placeholders like "[Generated image: ...]" or describe a picture as if you made one — you cannot actually create brand-new images yourself in a normal reply. If you're seeing this instruction with no image attached below, it means the app did NOT recognize the request as an image-generation command, so simply talk with ${config.bossName} normally (e.g. ask what they'd like pictured) instead of pretending to generate anything.
+${hasImage ? `- ${config.bossName} HAS ATTACHED A REAL PHOTO to this exact message, and you can genuinely see it (it's provided to you directly, not something you're imagining). Look at it and answer their question about it, describe it, or do whatever they asked — this is image ANALYSIS, completely different from image GENERATION, and is something you fully support. Never respond by saying you can't see images, can't generate images, or that the request wasn't recognized — that response only applies to requests to CREATE a new image, not to a photo they just sent you.` : ''}
 
 STYLE: Short = 1-2 sentences. Detailed when needed. Always human, warm, natural.
 ${isEnglish ? '' : 'REMINDER: Write your entire reply in ' + langName + ' script now.'}`;
@@ -3052,7 +3140,7 @@ async function callGroq(message, frames=null, retry=0) {
   if (frames?.length) {
     content = [{type:'text',text:message}];
     frames.forEach(f => {
-      content.push({type:'image_url',image_url:{url:`data:image/jpeg;base64,${f.data}`}});
+      content.push({type:'image_url',image_url:{url:`data:${f.mime || 'image/jpeg'};base64,${f.data}`}});
       content.push({type:'text',text:f.label});
     });
   } else { content = message; }
@@ -3073,13 +3161,18 @@ async function callGroq(message, frames=null, retry=0) {
     const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
       method:'POST',
       headers:{'Authorization':'Bearer '+config.groqKey,'Content-Type':'application/json'},
-      body: JSON.stringify({model, messages:[{role:'system',content:FRIDAY_SYS()},...history], max_tokens:500, temperature:0.75})
+      body: JSON.stringify({model, messages:[{role:'system',content:FRIDAY_SYS(!!frames?.length)},...history], max_tokens:500, temperature:0.75, ...(model===VISION_MODEL ? {reasoning_effort:'none'} : {})})
     }, 22000);
 
     if (!res.ok) {
       const err = await res.json().catch(()=>({}));
-      if (frames?.length) return await callGroq(message+' (image unavailable)',null,retry);
       const errMsg = err.error?.message||res.statusText;
+      if (frames?.length) {
+        console.error('Vision request failed:', res.status, errMsg);
+        if (retry===0) return await callGroq(message, frames, 1); // transient errors deserve one retry with the image still attached
+        addSystemMsg(`⚠ Couldn't analyze the image (${errMsg}). Answering from text only.`);
+        return await callGroq(message+' (note: an image was attached but could not be analyzed due to a technical issue — do not claim you were asked to generate an image; just say the image analysis failed)', null, retry);
+      }
       if (res.status===401) return `Invalid API key, ${config.bossName}. Please update in ⚙ CONFIG.`;
       if (res.status===429) return `Rate limit reached, ${config.bossName}. Please wait a moment and try again.`;
       throw new Error(errMsg);
@@ -3094,6 +3187,7 @@ async function callGroq(message, frames=null, retry=0) {
   } catch(err) {
     setApiOnline(false);
     if (err.name==='AbortError') {
+      if (userStoppedGeneration) { userStoppedGeneration = false; return null; }
       if (retry===0) {
         addSystemMsg('Request timed out — retrying...');
         return await callGroq(message,frames,1);
@@ -3124,12 +3218,89 @@ function setApiOnline(online) {
 async function sendMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
-  if (!text) return;
+  const attachments = pendingImageAttachments.slice(); // ★ images pasted/dropped/attached in the input
+  if (!text && attachments.length === 0) return;
+  const replyContext = activeReply; // capture before clearing
   input.value = ''; input.style.height = 'auto';
+  clearAttachments(); // clear the preview bar immediately, before the async work below
   msgCount++; updateMetrics();
-  addMsg('user', escHtml(text).replace(/\n/g,'<br>'));
-  saveChat('user', text);
-  document.getElementById('sendBtn').disabled = true;
+
+  // Build the user's message bubble — thumbnails (if any) above the typed text.
+  const thumbsHtml = attachments.length
+    ? `<div class="msg-attached-imgs">${attachments.map(a => `<img src="data:${a.mime};base64,${a.base64}" class="msg-attached-img" onclick="openImageLightbox(this.src)">`).join('')}</div>`
+    : '';
+  const bubbleHtml = thumbsHtml + (text ? escHtml(text).replace(/\n/g,'<br>') : '');
+  addMsg('user', bubbleHtml, '', replyContext ? {quoted: replyContext} : {});
+  if (replyContext) cancelReply();
+  saveChat('user', text || (attachments.length > 1 ? `[${attachments.length} images attached]` : '[Image attached]'));
+  setBusy(true);
+  window.srPending = false;
+
+  // ★ Image attachments go straight to the vision-capable AI — skip all the text-command
+  // parsing below (task/note commands don't apply to "here's a photo, what is it").
+  // EXCEPTION: if the text is asking to *generate/paint/draw* something "like this" /
+  // "using the reference image", that's an image-to-image request — we describe the
+  // attached photo, then actually call the image generator with that description,
+  // instead of just replying with text (which the model can't back up with a real image).
+  if (attachments.length > 0) {
+    const frames = attachments.map((a, i) => ({ data: a.base64, mime: a.mime, label: `[Attached image ${i+1}${a.name ? ': '+a.name : ''}]` }));
+
+    if (isImageToImageRequest(text, attachments.length > 0)) {
+      try {
+        showTyping();
+        const descReply = await callGroq(
+          'Describe this image in vivid, concise visual detail (subject, art style, colors, pose, clothing, background) so it can be used as a prompt for an AI image generator. Reply with ONLY the description as one paragraph — no preamble, no quotes, no "I see".',
+          frames
+        );
+        removeTyping();
+        if (descReply === null) { setBusy(false); return; } // user hit Stop
+        const desc = (descReply || '').trim().replace(/^["']+|["']+$/g, '');
+        if (!desc) {
+          addMsg('anna', `Sorry ${config.bossName}, I couldn't make out the reference image well enough to recreate it. Mind describing it or trying a clearer photo?`);
+          saveChat('assistant', `Couldn't describe reference image for generation.`);
+          setBusy(false);
+          if (!isSpeaking) resumeAfterSend();
+          return;
+        }
+        addMsg('anna', `Got it, ${config.bossName} — recreating that now.`);
+        saveChat('assistant', `Recreating reference image: ${desc}`);
+        await generateImage(desc, null, 1, false, true); // false = don't add a duplicate user bubble; true = desc is already generation-ready, skip re-enhancing
+      } catch(err) {
+        removeTyping();
+        addMsg('anna', `Sorry ${config.bossName}, something went wrong recreating that image. Please try again.`);
+        fridaySpeak(`Sorry ${config.bossName}, I hit an error recreating that image.`);
+        setBusy(false);
+      } finally {
+        if (!isSpeaking) resumeAfterSend();
+      }
+      return;
+    }
+
+    try {
+      const visionText = text || 'Take a look at this and tell me about it.';
+      showTyping();
+      const reply = await callGroq(visionText, frames);
+      removeTyping();
+      if (reply === null) return; // user hit Stop
+      const cleanReply = executeComputerTags(reply);
+      addMsg('anna', cleanReply
+        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+        .replace(/`([^`]+)`/g,'<code>$1</code>')
+        .replace(/```([\s\S]*?)```/g,'<pre>$1</pre>')
+        .replace(/\n/g,'<br>'));
+      saveChat('assistant', cleanReply);
+      fridaySpeak(cleanReply);
+    } catch(err) {
+      removeTyping();
+      addMsg('anna', `Sorry ${config.bossName}, something went wrong looking at that image. Please try again.`);
+      fridaySpeak(`Sorry ${config.bossName}, I hit an error with that image.`);
+    } finally {
+      setBusy(false);
+      if (!isSpeaking) resumeAfterSend();
+    }
+    return;
+  }
+
   const lo = text.toLowerCase().trim();
 
   // Mark SR as not processing so it doesn't block itself
@@ -3147,6 +3318,39 @@ async function sendMessage() {
     // ─── NEW CHAT VOICE COMMAND ───
     if (/^(new chat|clear chat|clear messages|clear history|start over|start fresh|reset chat)$/i.test(lo)) {
       await newChat();
+      return;
+    }
+
+    // ─── ★ AI IMAGE GENERATION COMMAND ───
+    // Explicit multi-image requests, e.g. "3 images of a cat" or "a few photos of X"
+    const countReq = parseImageCountRequest(text);
+    if (countReq && (countReq.prompt || lastImagePrompt)) {
+      await generateImage(countReq.prompt || lastImagePrompt, null, countReq.count);
+      return;
+    }
+    // Follow-up "give me more" / "another one" — reuses the last image description
+    if (parseMoreImagesRequest(text) && lastImagePrompt) {
+      await generateImage(lastImagePrompt, null, 3);
+      return;
+    }
+    // Refinement of the last generated image, e.g. "generate more like that, make it
+    // more perfect and realistic" — reuse the FULL previous description plus the new
+    // qualifier, so the character/subject stays consistent instead of being replaced
+    // by a generic, unrelated prompt.
+    const refinement = parseImageRefinementRequest(text);
+    if (refinement && lastImagePrompt) {
+      await generateImage(`${lastImagePrompt}, ${refinement}, keeping the same character, composition and style`);
+      return;
+    }
+    const imgPrompt = parseImageGenRequest(text);
+    if (imgPrompt) {
+      await generateImage(imgPrompt);
+      return;
+    }
+    // "give me more" with nothing generated yet — ask instead of hallucinating fake images
+    if (parseMoreImagesRequest(text) && !lastImagePrompt) {
+      const ans = `I haven't generated any pictures yet, ${config.bossName} — tell me what you'd like and I'll paint it!`;
+      addMsg('anna', ans); saveChat('assistant', ans); fridaySpeak(ans);
       return;
     }
 
@@ -3349,6 +3553,9 @@ async function sendMessage() {
     // ─── VISION ───
     let frames = null;
     let visionText = text;
+    if (replyContext) {
+      visionText = `[${config.bossName} is replying to ${replyContext.name}'s earlier message: "${replyContext.text}"]\n${visionText}`;
+    }
     if (cameraStream || screenStream) {
       frames = [];
       if (cameraStream) { const f = captureFrame(document.getElementById('cameraVideo')); if(f) frames.push({label:'[Camera view]',data:f}); }
@@ -3363,6 +3570,7 @@ async function sendMessage() {
     showTyping();
     const reply = await callGroq(visionText, frames);
     removeTyping();
+    if (reply === null) return; // user hit Stop — stopGeneration() already handled the UI
 
     const cleanReply = executeComputerTags(reply);
     addMsg('anna', cleanReply
@@ -3378,7 +3586,7 @@ async function sendMessage() {
     addMsg('anna', `Sorry ${config.bossName}, something went wrong. Please try again.`);
     fridaySpeak(`Sorry ${config.bossName}, I hit an error. Please try again.`);
   } finally {
-    document.getElementById('sendBtn').disabled = false;
+    setBusy(false);
     // Resume always-on loop (only if not about to speak — fridaySpeak handles that case)
     if (!isSpeaking) resumeAfterSend();
   }
@@ -3395,6 +3603,411 @@ function appendNote(noteText) {
   flashEl(area, 'var(--green)');
   const badge = document.getElementById('notesSavedBadge');
   if (badge) { badge.textContent = '✓ Note added'; badge.style.opacity='1'; setTimeout(()=>badge.style.opacity='0', 2500); }
+}
+
+// ============================================================
+//  ★ AI IMAGE GENERATION (free, no API key — image.pollinations.ai)
+// ============================================================
+// Recognizes natural chat phrases asking A.N.N.A to generate a picture,
+// pulls out the subject/description, and returns it — or null if the
+// message isn't an image request at all.
+// Detects requests to generate/paint/draw a NEW image based on an attached reference
+// photo — e.g. "generate an img like this", "paint an image using the reference image
+// I uploaded", "make something similar to this". Requires both a generation verb AND
+// a reference-to-the-attached-photo phrase, so plain analysis questions ("what is this?")
+// never fire it.
+function isImageToImageRequest(text, hasAttachment) {
+  const t = (text || '').toLowerCase().trim();
+  if (!t) return false;
+  const hasGenVerb = /\b(generate|create|make|draw|paint|design|render|produce|sketch|conjure|recreate|remake|redraw|repaint)\b/.test(t);
+  if (!hasGenVerb) return false;
+  // Explicit phrases referencing "the photo/image/reference" itself.
+  const hasImageRef = /\b(like this|like that|similar to this|similar to that|same style|reference image|the reference|this image|that image|this photo|that photo|this picture|that picture|using (?:the )?(?:reference|this|that)|based on (?:the )?(?:reference|this|that)|from (?:the )?(?:reference|this|that)|i uploaded|i attached|i sent|uploaded above|attached above)\b/.test(t);
+  if (hasImageRef) return true;
+  // ★ If a photo is actually attached to this message, a generation verb alone is enough —
+  // people naturally say "generate an image of this girl / her / this guy in a costume"
+  // rather than "this image", and that's still clearly asking us to use the attached photo
+  // as the basis for the new picture, not just chat about it.
+  if (hasAttachment) return true;
+  return false;
+}
+
+// Detects a REFINEMENT of the previously generated image — e.g. "generate more image
+// like that, make it more perfect and realistic", "one more like this but more detailed".
+// Without this, the fuzzy image-gen parser below would strip off everything up to "like
+// that/this" and treat the leftover words ("make it more perfect and realistic") as an
+// entirely new, standalone subject — losing the actual character/scene and generating
+// something unrelated. Returns the extra qualifier text (e.g. "more perfect and
+// realistic") to be appended to lastImagePrompt, or null if this isn't a refinement.
+function parseImageRefinementRequest(text) {
+  const t = (text || '').trim();
+  if (!t) return null;
+  const m = t.match(/^(?:hey\s+anna[,!\s]+)?(?:ok(?:ay)?[,!\s]+)?(?:generate|create|make|render|produce|draw|paint|do)\s+(?:me\s+)?(?:\d+\s+)?(?:more\s+)?(?:images?|pictures?|pics?|photos?)?\s*(?:one\s+)?(?:like|similar to|same as)\s+(?:that|this)(?:\s+one)?[,.]?\s*(?:but\s+)?(?:make\s+it\s+|make\s+her\s+|make\s+him\s+|make\s+that\s+)?(.*)$/i);
+  if (!m) return null;
+  const extra = (m[1] || '').trim().replace(/[.?!]+$/, '');
+  return extra || 'the same, unchanged';
+}
+
+function parseImageGenRequest(text) {
+  let t = (text || '').trim();
+  if (!t) return null;
+  // Strip conversational wrappers so casual chat phrasing still matches,
+  // e.g. "Hey ANNA, can you please generate an image of a fox?"
+  t = t.replace(/^(?:hey\s+|hi\s+|ok(?:ay)?\s+)?anna[,!\s]+/i, '')
+       .replace(/^(?:please\s+)?(?:could|can|would|will)\s+you\s+(?:please\s+)?/i, '')
+       .replace(/^please\s+/i, '')
+       .trim();
+
+  // Broad synonym groups — covers "image", "img", "picture", "pic", "photo",
+  // "artwork", "wallpaper", etc. and a wide range of request verbs.
+  const NOUN = '(?:ai\\s+)?(?:image|img|picture|pic|photo|photograph|drawing|painting|artwork|illustration|wallpaper|render|graphic)s?';
+  const VERB = '(?:generate|create|make|design|produce|render|build|draw\\s+up|whip\\s+up|conjure(?:\\s+up)?)';
+  const CONNECT = '(?:of|showing|depicting|featuring|for|about|that\\s+shows|that\\s+depicts)';
+
+  const patterns = [
+    // "generate/create/make/design/produce/render/build/whip up an image of X"
+    new RegExp(`^${VERB}\\s+(?:me\\s+)?(?:an?\\s+)?${NOUN}\\s+${CONNECT}\\s+(.+)$`, 'i'),
+    // "generate image: X" / "create picture - X"
+    new RegExp(`^${VERB}\\s+(?:an?\\s+)?${NOUN}\\s*[:\\-]\\s*(.+)$`, 'i'),
+    // "make me an image X" (missing the "of" connector)
+    new RegExp(`^${VERB}\\s+(?:me\\s+)?(?:an?\\s+)?${NOUN}\\s+(.+)$`, 'i'),
+    // "image of X" / "picture of X" / "img of X" — no verb needed at all
+    new RegExp(`^${NOUN}\\s+${CONNECT}\\s+(.+)$`, 'i'),
+    // "show me a picture of X" / "give me an image of X"
+    new RegExp(`^(?:show|give)\\s+me\\s+(?:an?\\s+)?${NOUN}\\s+(?:${CONNECT}\\s+)?(.+)$`, 'i'),
+    // "draw/paint/sketch/imagine X" or "draw me X"
+    /^(?:draw|paint|sketch|imagine)\s+(?:me\s+)?(?:an?\s+)?(.+)$/i,
+  ];
+  for (const p of patterns) {
+    const m = t.match(p);
+    if (m && m[1]) {
+      let prompt = m[1].trim()
+        .replace(/[.?!]+$/,'')
+        .replace(/\s+(?:for me|please|thanks|thank you)$/i,'')
+        .trim();
+      if (prompt.length > 1) return prompt;
+    }
+  }
+  // ★ Exact patterns found nothing — try a typo-tolerant fuzzy pass, so
+  // misspellings like "genereate imge of X" still trigger image generation.
+  return fuzzyParseImageGenRequest(t);
+}
+
+// ─── Typo-tolerant fallback (Levenshtein-distance word matching) ───
+function levenshteinDist(a, b) {
+  a = a.toLowerCase(); b = b.toLowerCase();
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const dp = new Array(n + 1);
+  for (let j = 0; j <= n; j++) dp[j] = j;
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0]; dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const tmp = dp[j];
+      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+function fuzzyWordMatch(word, candidates) {
+  word = (word || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!word) return null;
+  for (const c of candidates) {
+    if (word === c) return c;
+    const threshold = c.length <= 4 ? 1 : 2; // tighter tolerance for short words
+    if (Math.abs(word.length - c.length) <= threshold && levenshteinDist(word, c) <= threshold) return c;
+  }
+  return null;
+}
+const IMG_FUZZY_VERBS = ['generate','create','make','design','produce','render','build','conjure'];
+const IMG_FUZZY_NOUNS = ['image','img','picture','pic','photo','photograph','drawing','painting','artwork','illustration','wallpaper','graphic'];
+const IMG_FUZZY_STANDALONE_VERBS = ['draw','paint','sketch','imagine'];
+const IMG_FUZZY_CONNECTORS = ['of','showing','depicting','featuring','for','about'];
+const IMG_FUZZY_FILLERS = ['me','a','an','the','ai'];
+function fuzzyParseImageGenRequest(text) {
+  const words = (text || '').trim().split(/\s+/);
+  if (words.length < 2) return null;
+  const lookahead = Math.min(words.length, 6);
+  let verbIdx = -1, nounIdx = -1, standaloneIdx = -1;
+  for (let i = 0; i < lookahead; i++) {
+    const w = words[i];
+    if (verbIdx === -1 && fuzzyWordMatch(w, IMG_FUZZY_VERBS)) verbIdx = i;
+    else if (nounIdx === -1 && fuzzyWordMatch(w, IMG_FUZZY_NOUNS)) nounIdx = i;
+    else if (standaloneIdx === -1 && fuzzyWordMatch(w, IMG_FUZZY_STANDALONE_VERBS)) standaloneIdx = i;
+  }
+  // Require the trigger word to anchor the very start of the message —
+  // this avoids false-firing on ordinary sentences that merely mention
+  // "image"/"picture" partway through (e.g. "what's your favorite photo of nature").
+  let startIdx = -1;
+  if (standaloneIdx === 0) {
+    startIdx = standaloneIdx + 1;
+    while (startIdx < words.length && IMG_FUZZY_FILLERS.includes(words[startIdx].toLowerCase().replace(/[^a-z]/g,''))) startIdx++;
+  } else if (nounIdx === 0 || (verbIdx === 0 && nounIdx !== -1)) {
+    startIdx = nounIdx + 1;
+    while (startIdx < words.length) {
+      const w = words[startIdx].toLowerCase().replace(/[^a-z]/g, '');
+      if (fuzzyWordMatch(w, IMG_FUZZY_CONNECTORS) || IMG_FUZZY_FILLERS.includes(w)) startIdx++;
+      else break;
+    }
+  } else {
+    return null;
+  }
+  if (startIdx === -1 || startIdx >= words.length) return null;
+  let prompt = words.slice(startIdx).join(' ')
+    .replace(/[.?!]+$/, '')
+    .replace(/\s+(?:for me|please|thanks|thank you)$/i, '')
+    .trim();
+  return prompt.length > 1 ? prompt : null;
+}
+
+// ─── Follow-up "give me more" detection (uses the last image prompt) ───
+const IMG_MORE_PATTERNS = [
+  /^(?:ok(?:ay)?[,!\s]+)?(?:give me |show me |send me |i want |can i (?:get|have) )?(?:some |a few |several |couple(?: of)? )?more(?: (?:pics?|pictures|images|photos|ones?))?[.!]?$/i,
+  /^(?:another one|one more|do (?:it|that) again|again)[.!]?$/i,
+  /^more,? please[.!]?$/i,
+];
+function parseMoreImagesRequest(text) {
+  const t = (text || '').trim();
+  if (!t) return false;
+  return IMG_MORE_PATTERNS.some(p => p.test(t));
+}
+
+// ─── Explicit count requests: "3 pictures of X", "a few images of a cat", "some photos of the beach" ───
+const IMG_COUNT_WORDS = { 'a':1,'an':1,'one':1,'couple':2,'a couple':2,'a couple of':2,'few':3,'a few':3,'some':3,'several':4 };
+function parseImageCountRequest(text) {
+  let t = (text || '').trim();
+  if (!t) return null;
+  t = t.replace(/^(?:hey\s+|hi\s+|ok(?:ay)?\s+)?anna[,!\s]+/i, '').trim();
+  const NOUN = '(?:ai\\s+)?(?:images?|imgs?|pictures?|pics?|photos?|photographs?|drawings?|paintings?|artworks?|illustrations?)';
+  const VERB = '(?:generate|create|make|design|produce|render|build|give me|show me|send me)';
+  const CONNECT = '(?:of|showing|depicting|featuring|for|about)';
+  const COUNT = '(\\d+|a\\s+couple\\s+of|a\\s+couple|couple\\s+of|couple|a\\s+few|few|some|several|one|two|three|four|five)';
+  const re = new RegExp(`^${VERB}\\s+${COUNT}\\s+(?:more\\s+)?${NOUN}\\s*(?:${CONNECT}\\s+(.+))?$`, 'i');
+  const m = t.match(re);
+  if (!m) return null;
+  const WORD_NUMS = {one:1,two:2,three:3,four:4,five:5};
+  let raw = m[1].toLowerCase().replace(/\s+/g,' ').trim();
+  let count = parseInt(raw, 10);
+  if (isNaN(count)) count = WORD_NUMS[raw] ?? IMG_COUNT_WORDS[raw] ?? 3;
+  count = Math.max(1, Math.min(count, 4)); // cap at 4 to stay fast
+  let prompt = m[2] ? m[2].trim().replace(/[.?!]+$/,'').replace(/\s+(?:for me|please|thanks|thank you)$/i,'').trim() : null;
+  return { count, prompt: prompt && prompt.length > 1 ? prompt : null };
+}
+
+// In-app styled modal (matches ANNA's design) instead of a native browser prompt.
+function promptImageGen() {
+  const modal = document.getElementById('imageGenModal');
+  const input = document.getElementById('imageGenPromptInput');
+  input.value = '';
+  modal.classList.add('open');
+  setTimeout(() => input.focus(), 60);
+}
+function closeImageGenModal() {
+  document.getElementById('imageGenModal').classList.remove('open');
+}
+function confirmImageGenModal() {
+  const input = document.getElementById('imageGenPromptInput');
+  const desc = input.value.trim();
+  if (!desc) { input.focus(); return; }
+  closeImageGenModal();
+  document.getElementById('chatInput').value = 'generate an image of ' + desc;
+  sendMessage();
+}
+
+// Builds a higher-quality pollinations URL for a given seed/model.
+// model=flux gives the best detail & prompt-following; turbo/flux-realism are used as
+// automatic fallbacks below if flux is briefly slow or overloaded. enhance=true lets
+// pollinations auto-improve the prompt further on top of our own rewrite below.
+function pollinationsUrl(prompt, seed, model = 'flux') {
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=1280&seed=${seed}&nologo=true&model=${model}&enhance=true&safe=false`;
+}
+
+// Preloads an image and resolves once it's actually loaded (or rejects on error/timeout/cancel).
+// Registers {img, reject, timer} in activeImageEls so stopGeneration() can force-cancel it and
+// immediately settle the promise. Unlike the old version, this now times out — previously a
+// slow/hung pollinations request would leave the spinner spinning forever with no failure and
+// no retry, which was the main source of "generation just never finishes".
+function preloadImage(url, timeoutMs = 35000) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    let settled = false;
+    const entry = { img, reject, timer: null };
+    activeImageEls.push(entry);
+    entry.timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      img.onload = null; img.onerror = null; img.src = '';
+      reject(new Error('timeout'));
+    }, timeoutMs);
+    img.onload = () => { if (settled) return; settled = true; clearTimeout(entry.timer); resolve(url); };
+    img.onerror = () => { if (settled) return; settled = true; clearTimeout(entry.timer); reject(new Error('load failed')); };
+    img.src = url;
+  });
+}
+
+// Ordered fallback of image models. If the primary model (flux) is briefly overloaded, slow,
+// or returns a broken image, we automatically retry with the next model on a fresh seed instead
+// of surfacing a failure straight away — this is what cuts down on dead-end "generation failed"
+// results from before.
+const IMAGE_MODEL_FALLBACK = ['flux', 'turbo', 'flux-realism'];
+
+// Generates one image with automatic retries across models/seeds. Returns {url, seed} on
+// success, or throws once every fallback has been exhausted (or the user hit Stop).
+async function generateSlotImage(prompt, baseSeed, token) {
+  let lastErr;
+  for (let attempt = 0; attempt < IMAGE_MODEL_FALLBACK.length; attempt++) {
+    if (token !== imageGenToken) throw new Error('stopped');
+    const model = IMAGE_MODEL_FALLBACK[attempt];
+    const seed = baseSeed + attempt; // vary the seed on each retry so we don't just re-hit the same cached failure
+    const url = pollinationsUrl(prompt, seed, model);
+    try {
+      await preloadImage(url);
+      return { url, seed };
+    } catch (e) {
+      lastErr = e;
+      if (e.message === 'stopped') throw e;
+      await new Promise(r => setTimeout(r, 400)); // brief pause before the next attempt
+    }
+  }
+  throw lastErr || new Error('all attempts failed');
+}
+
+// Rewrites the user's short request into a rich, highly-detailed generation prompt — the same
+// trick ChatGPT/DALL-E 3 use internally, where a short idea like "a fox in the snow" gets
+// silently expanded with subject detail, lighting, camera feel, and art style before the image
+// model ever sees it. This is the single biggest lever for "accurate", higher-quality results.
+// Falls back to the original prompt untouched if there's no API key or the rewrite fails.
+async function enhanceImagePromptForGen(rawPrompt) {
+  if (!config.groqKey) return rawPrompt;
+  try {
+    const sys = 'You are an expert prompt writer for AI image generators, the same role ChatGPT plays internally before calling DALL-E 3. Rewrite the user\'s idea into ONE vivid, highly detailed image-generation prompt: specify the subject and pose/action, facial expression if there is a person or character, materials/textures, color palette, lighting (e.g. golden hour, soft studio light, cinematic rim light), camera/lens feel (e.g. 85mm portrait, wide-angle establishing shot), composition, and art style (photo-real, digital painting, anime, etc — infer the best fit, default photo-real if unclear), plus quality terms like sharp focus and highly detailed. Keep it to one paragraph under 80 words. Reply with ONLY the rewritten prompt — no preamble, no quotes, no markdown.';
+    const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + config.groqKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: sys }, { role: 'user', content: rawPrompt }], max_tokens: 220, temperature: 0.7 })
+    }, 12000);
+    if (!res.ok) return rawPrompt;
+    const d = await res.json();
+    const out = (d.choices?.[0]?.message?.content || '').trim().replace(/^["']+|["']+$/g, '');
+    return out || rawPrompt;
+  } catch (e) {
+    console.warn('Prompt enhancement failed, using raw prompt:', e);
+    return rawPrompt;
+  }
+}
+
+function singleImageMarkup(prompt, url, seed, msgId) {
+  const safePrompt = escHtml(prompt);
+  return `<img src="${url}" alt="${safePrompt}" class="gen-image-img" data-full="${url}" onclick="openImageLightbox(this.dataset.full)">
+    <div class="gen-image-caption">"${safePrompt}"</div>
+    <div class="gen-image-actions">
+      <a href="${url}" download="anna-image-${seed}.jpg" target="_blank" class="gen-image-btn">⬇ SAVE</a>
+      <button class="gen-image-btn" data-prompt="${safePrompt}" data-msgid="${msgId}" onclick="regenerateImage(this.dataset.prompt,this.dataset.msgid)">↻ REGENERATE</button>
+    </div>`;
+}
+
+// prompt: description text. msgId: pass only when regenerating a single existing image.
+// count: how many images to generate at once (all fetched in parallel for speed).
+// skipEnhance: true when `prompt` is already a rich, purpose-built description (e.g. the
+// image-to-image path already asked the vision model for one) so we don't double-rewrite it.
+async function generateImage(prompt, msgId, count = 1, announceUser = true, skipEnhance = false) {
+  const isRegen = !!msgId;
+  count = Math.max(1, Math.min(count || 1, 4));
+  setBusy(true);
+  const myToken = ++imageGenToken; // if Stop is hit, this becomes stale and we discard our result
+
+  if (!isRegen) {
+    lastImagePrompt = prompt; // remember for "give me more" follow-ups
+    if (announceUser) {
+      const label = count > 1 ? `🎨 Generate ${count} images: ${prompt}` : `🎨 Generate image: ${prompt}`;
+      addMsg('user', escHtml(label));
+      saveChat('user', label.replace('🎨 ', ''));
+    }
+    msgId = 'genimg_' + Date.now();
+
+    if (count === 1) {
+      addMsg('anna', `<div class="gen-image-wrap" id="${msgId}">
+          <div class="gen-image-loading"><div class="gen-image-spinner"></div><span>Painting "${escHtml(prompt)}" for you, ${escHtml(config.bossName)}...</span></div>
+        </div>`);
+    } else {
+      const slots = Array.from({length: count}, (_, i) =>
+        `<div class="gen-image-slot" id="${msgId}_s${i}"><div class="gen-image-loading"><div class="gen-image-spinner"></div><span>Painting ${i+1}/${count}...</span></div></div>`
+      ).join('');
+      addMsg('anna', `<div class="gen-image-wrap" id="${msgId}">
+          <div class="gen-image-caption">"${escHtml(prompt)}"</div>
+          <div class="gen-image-grid">${slots}</div>
+        </div>`);
+    }
+    fridaySpeak(count > 1 ? `On it, ${config.bossName}. Painting ${count} of those now.` : `On it, ${config.bossName}. Generating that image now.`);
+  } else {
+    const wrap = document.getElementById(msgId);
+    if (wrap) wrap.innerHTML = `<div class="gen-image-loading"><div class="gen-image-spinner"></div><span>Regenerating "${escHtml(prompt)}"...</span></div>`;
+  }
+
+  // Silently rewrite the short user prompt into a detailed, DALL-E-style generation prompt.
+  // The chat caption still shows the user's original words — only the image call itself gets
+  // the richer version, exactly like ChatGPT's own prompt-rewrite step.
+  const genPrompt = skipEnhance ? prompt : await enhanceImagePromptForGen(prompt);
+  if (myToken !== imageGenToken) { setBusy(false); return; } // user hit Stop during the rewrite
+
+  // Fire all requests in parallel — this is what makes multi-image requests fast
+  // instead of waiting for each picture to finish before starting the next. Each slot now
+  // retries internally (fresh seed + fallback model) before it's allowed to fail.
+  const baseSeeds = Array.from({length: count}, () => Math.floor(Math.random() * 1000000));
+  const results = await Promise.allSettled(baseSeeds.map(s => generateSlotImage(genPrompt, s, myToken)));
+
+  // The user hit Stop while this was in flight — replace the spinner with a clear stopped state.
+  if (myToken !== imageGenToken) {
+    const wrap = document.getElementById(msgId);
+    if (wrap) wrap.innerHTML = `<div class="gen-image-error">⏹ Stopped.</div>`;
+    setBusy(false);
+    return;
+  }
+
+  if (count === 1) {
+    const wrap = document.getElementById(msgId);
+    if (!wrap) { setBusy(false); return; }
+    if (results[0].status === 'fulfilled') {
+      const { url, seed } = results[0].value;
+      wrap.innerHTML = singleImageMarkup(prompt, url, seed, msgId);
+      if (!isRegen) saveChat('assistant', `[Generated image: ${prompt}]`);
+    } else {
+      wrap.innerHTML = `<div class="gen-image-error">⚠ Image generation failed, ${escHtml(config.bossName)}. Check your internet connection and try again.</div>
+        <div class="gen-image-actions"><button class="gen-image-btn" data-prompt="${escHtml(prompt)}" data-msgid="${msgId}" onclick="regenerateImage(this.dataset.prompt,this.dataset.msgid)">↻ RETRY</button></div>`;
+      if (!isRegen) fridaySpeak(`Sorry ${config.bossName}, that image generation failed.`);
+    }
+  } else {
+    let okCount = 0;
+    results.forEach((r, i) => {
+      const slot = document.getElementById(`${msgId}_s${i}`);
+      if (!slot) return;
+      if (r.status === 'fulfilled') {
+        okCount++;
+        const { url, seed } = r.value;
+        const safePrompt = escHtml(prompt);
+        slot.innerHTML = `<img src="${url}" alt="${safePrompt}" class="gen-image-img" data-full="${url}" onclick="openImageLightbox(this.dataset.full)">
+          <a href="${url}" download="anna-image-${seed}.jpg" target="_blank" class="gen-image-btn" style="align-self:flex-start">⬇ SAVE</a>`;
+      } else {
+        slot.innerHTML = `<div class="gen-image-error" style="font-size:0.6rem">⚠ Failed</div>`;
+      }
+    });
+    if (okCount > 0) saveChat('assistant', `[Generated ${okCount} image(s): ${prompt}]`);
+    if (okCount === 0) fridaySpeak(`Sorry ${config.bossName}, those images failed to generate.`);
+  }
+
+  const wrapChat = document.getElementById('chatMessages');
+  if (wrapChat) wrapChat.scrollTop = wrapChat.scrollHeight;
+  setBusy(false);
+}
+function regenerateImage(prompt, msgId) { generateImage(prompt, msgId); }
+
+function openImageLightbox(url) {
+  const box = document.createElement('div');
+  box.className = 'gen-image-lightbox';
+  box.innerHTML = `<img src="${url}" alt="">`;
+  box.onclick = () => box.remove();
+  document.body.appendChild(box);
 }
 
 // ============================================================
@@ -3442,7 +4055,7 @@ function handleBrowserCommand(lo, original) {
   if (/(?:open\s+)?(?:this\s+pc|file\s+explorer|my\s+computer|explorer\.exe)/i.test(lo)) {
     const m = `I can't open desktop apps from a browser, ${config.bossName}. Press Windows + E to open File Explorer instantly.`;
     addMsg('anna',m); fridaySpeak(m); saveChat('assistant',m);
-    document.getElementById('sendBtn').disabled=false; return true;
+    setBusy(false); return true;
   }
 
   return false;
@@ -3469,23 +4082,174 @@ function openTab(url, context='') {
 // ============================================================
 //  CHAT UTILS
 // ============================================================
-function addMsg(role, content, extraClass='') {
+let activeReply = null; // {id, name, text} — the message currently being replied to
+let annaMsgSeq = 0;
+function addMsg(role, content, extraClass='', opts={}) {
   const wrap = document.getElementById('chatMessages');
   const div = document.createElement('div');
+  const msgId = opts.id || ('msg_' + Date.now() + '_' + (annaMsgSeq++));
   div.className = `msg ${role}${extraClass?' '+extraClass:''}`;
+  div.id = msgId;
   const initials = role==='anna'?'AN':config.bossName.substring(0,2).toUpperCase();
   const name = role==='anna'?(extraClass==='proactive'?'⚡ A.N.N.A':'A.N.N.A'):config.bossName.toUpperCase();
   const t = getNow();
   const ts = `<span style="font-family:'Share Tech Mono',monospace;font-size:0.48rem;color:var(--text-dim);opacity:0.7;margin-left:8px">${t.timeStr}</span>`;
   if (role!=='system') {
-    div.innerHTML=`<div class="msg-avatar">${initials}</div><div style="flex:1"><div class="msg-name">${name}${ts}</div><div class="msg-bubble">${content}</div></div>`;
+    // Plain-text snippet stored for quoting if someone taps "reply" on this message later.
+    const quoteSnippet = (opts.quoteText !== undefined ? opts.quoteText : String(content))
+      .replace(/<br\s*\/?>/gi,' ').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim().slice(0,140);
+    let quoteHtml = '';
+    if (opts.quoted) {
+      quoteHtml = `<div class="msg-quote-block" onclick="scrollToMsg('${opts.quoted.id}')"><span class="mq-name">${escHtml(opts.quoted.name)}</span><span class="mq-text">${escHtml(opts.quoted.text)}</span></div>`;
+    }
+    const replyIcon = `<span class="msg-reply-icon" onclick="setReplyTarget('${msgId}')" title="Reply">↩ Reply</span>`;
+    div.innerHTML=`<div class="msg-avatar">${initials}</div><div style="flex:1;min-width:0"><div class="msg-name">${name}${ts}${replyIcon}</div><div class="msg-bubble">${quoteHtml}${content}</div></div>`;
+    div.dataset.quoteName = name;
+    div.dataset.quoteText = quoteSnippet;
   } else {
     div.innerHTML=`<div class="msg-bubble">${content}</div>`;
   }
   wrap.appendChild(div); wrap.scrollTop=wrap.scrollHeight;
   return div;
 }
+// Tapping "↩ Reply" on any message (yours or ANNA's) opens the WhatsApp-style
+// quote bar above the input box, ready to be attached to your next message.
+function setReplyTarget(msgId) {
+  const el = document.getElementById(msgId);
+  if (!el) return;
+  const name = el.dataset.quoteName || 'A.N.N.A';
+  const text = el.dataset.quoteText || '';
+  activeReply = { id: msgId, name, text };
+  document.getElementById('replyPreviewName').textContent = name;
+  document.getElementById('replyPreviewText').textContent = text;
+  document.getElementById('replyPreviewBar').classList.add('active');
+  const input = document.getElementById('chatInput');
+  input.focus();
+}
+function cancelReply() {
+  activeReply = null;
+  document.getElementById('replyPreviewBar').classList.remove('active');
+}
+// Tapping a quoted block jumps back to (and briefly highlights) the original message.
+function scrollToMsg(msgId) {
+  const el = document.getElementById(msgId);
+  if (!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  const bubble = el.querySelector('.msg-bubble');
+  if (bubble) {
+    const orig = bubble.style.boxShadow;
+    bubble.style.transition = 'box-shadow 0.3s';
+    bubble.style.boxShadow = '0 0 0 2px var(--arc)';
+    setTimeout(() => { bubble.style.boxShadow = orig; }, 900);
+  }
+}
 const addSystemMsg = t => addMsg('system','// '+t);
+
+// ─── ★ SEND / STOP BUTTON ───
+// While ANNA is generating (text reply or images), the send button turns into
+// a Stop button so the user can cancel instead of waiting it out.
+const SEND_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+const STOP_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>';
+function setBusy(busy) {
+  isBusy = busy;
+  const btn = document.getElementById('sendBtn');
+  if (!btn) return;
+  btn.classList.toggle('stop-mode', busy);
+  btn.title = busy ? 'Stop' : 'Send';
+  btn.innerHTML = busy ? STOP_ICON : SEND_ICON;
+}
+function stopGeneration() {
+  userStoppedGeneration = true;
+  imageGenToken++; // invalidates any in-flight generateImage() calls
+  if (currentAbortController) { try { currentAbortController.abort(); } catch(e) {} }
+  activeImageEls.forEach(({img, reject}) => {
+    try { img.onload = null; img.onerror = null; img.src = ''; reject(new Error('stopped')); } catch(e) {}
+  });
+  activeImageEls = [];
+  removeTyping();
+  setBusy(false);
+  addSystemMsg('⏹ Stopped.');
+}
+function handleSendOrStop() {
+  if (isBusy) stopGeneration();
+  else sendMessage();
+}
+
+// ─── ★ CHAT-INPUT IMAGE ATTACHMENTS (paste / drag&drop / 📎 upload) ───
+// Lets the user attach a photo the way ChatGPT/Gemini do: paste it, drop it, or
+// click 📎, add an optional caption, then hit Enter/Send — no separate modal needed.
+const ATTACH_MAX = 4;
+const ATTACH_MAX_MB = 8;
+function addImageFile(file) {
+  if (!file || !file.type || !file.type.startsWith('image/')) return;
+  if (file.size > ATTACH_MAX_MB * 1024 * 1024) {
+    addSystemMsg(`Image too large (max ${ATTACH_MAX_MB}MB): ${file.name || 'image'}`);
+    return;
+  }
+  if (pendingImageAttachments.length >= ATTACH_MAX) {
+    addSystemMsg(`You can attach up to ${ATTACH_MAX} images at once.`);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const base64 = e.target.result.split(',')[1];
+    pendingImageAttachments.push({ base64, mime: file.type || 'image/jpeg', name: file.name || '' });
+    renderAttachPreview();
+  };
+  reader.readAsDataURL(file);
+}
+function renderAttachPreview() {
+  const bar = document.getElementById('attachPreviewBar');
+  if (!bar) return;
+  bar.classList.toggle('active', pendingImageAttachments.length > 0);
+  bar.innerHTML = pendingImageAttachments.map((a, i) =>
+    `<div class="attach-thumb"><img src="data:${a.mime};base64,${a.base64}" alt=""><button class="attach-remove" onclick="removeAttachment(${i})" title="Remove">✕</button></div>`
+  ).join('');
+}
+function removeAttachment(i) {
+  pendingImageAttachments.splice(i, 1);
+  renderAttachPreview();
+}
+function clearAttachments() {
+  pendingImageAttachments = [];
+  renderAttachPreview();
+}
+function handleImageAttachSelect(input) {
+  Array.from(input.files || []).forEach(addImageFile);
+  input.value = ''; // allow re-selecting the same file later
+}
+// Paste an image straight from the clipboard, drag-and-drop onto the input area,
+// or click 📎 — all three feed into the same attachment pipeline above.
+document.addEventListener('DOMContentLoaded', () => {
+  const chatInput = document.getElementById('chatInput');
+  const inputArea = document.querySelector('.chat-input-area');
+  if (chatInput) {
+    chatInput.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items || [];
+      let hadImage = false;
+      for (const item of items) {
+        if (item.type && item.type.startsWith('image/')) {
+          hadImage = true;
+          const file = item.getAsFile();
+          if (file) addImageFile(file);
+        }
+      }
+      if (hadImage) e.preventDefault(); // don't also paste garbled image data as text
+    });
+  }
+  if (inputArea) {
+    ['dragenter','dragover'].forEach(ev => inputArea.addEventListener(ev, (e) => {
+      e.preventDefault(); inputArea.classList.add('drag-over');
+    }));
+    ['dragleave','drop'].forEach(ev => inputArea.addEventListener(ev, (e) => {
+      e.preventDefault(); inputArea.classList.remove('drag-over');
+    }));
+    inputArea.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+      files.forEach(addImageFile);
+    });
+  }
+});
 function showTyping() {
   const wrap=document.getElementById('chatMessages');
   const div=document.createElement('div'); div.className='msg anna'; div.id='typingIndicator';
@@ -4783,7 +5547,7 @@ function handleAppVoiceCommand(lo, original) {
   if (/(?:open\s+)?(?:this\s+pc|file\s+explorer|my\s+computer|explorer\.exe)/i.test(lo)) {
     const msg = `I can't open File Explorer from a web page, ${config.bossName}. Press Windows + E on your keyboard to open it instantly.`;
     addMsg('anna', msg); fridaySpeak(msg); saveChat('assistant', msg);
-    document.getElementById('sendBtn').disabled = false;
+    setBusy(false);
     return true;
   }
 
@@ -4818,7 +5582,9 @@ function handleAppVoiceCommand(lo, original) {
   window.sendMessage = async function() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
-    if (!text) return;
+    // ★ An image attachment with no typed caption is still a valid send (like GPT/Gemini)
+    if (!text && pendingImageAttachments.length === 0) return;
+    if (!text) return orig.apply(this, arguments); // has attachments — let the real sendMessage handle it
     const lo = text.toLowerCase().trim();
 
     // Check app-level commands first (before adding user msg)
@@ -4835,7 +5601,7 @@ function handleAppVoiceCommand(lo, original) {
       div.innerHTML=`<div class="msg-avatar">${config.bossName.substring(0,2).toUpperCase()}</div><div style="flex:1"><div class="msg-name">${config.bossName.toUpperCase()}${ts2}</div><div class="msg-bubble">${escHtml(text)}</div></div>`;
       wrap.appendChild(div); wrap.scrollTop=wrap.scrollHeight;
       saveChat('user', text);
-      document.getElementById('sendBtn').disabled = false;
+      setBusy(false);
       if (!isSpeaking) resumeAfterSend();
       return;
     }
@@ -5181,14 +5947,14 @@ async function executeFileRead() {
   let userMsg = `I've attached a file: "${pendingFileName}". ${prompt}`;
   addMsg('user', `📎 <strong>${escHtml(pendingFileName)}</strong> — ${escHtml(actionPrompts[action].substring(0,60))}...`);
   saveChat('user', userMsg);
-  document.getElementById('sendBtn').disabled = true;
+  setBusy(true);
 
   showTyping();
   let reply;
   try {
     if (pendingFileData.type === 'image') {
       // Use vision model
-      const frames = [{ data: pendingFileData.base64, label: `[Attached image: ${pendingFileName}]` }];
+      const frames = [{ data: pendingFileData.base64, mime: pendingFileData.mime, label: `[Attached image: ${pendingFileName}]` }];
       reply = await callGroq(prompt, frames);
     } else {
       // Inject file content into prompt
@@ -5223,7 +5989,7 @@ async function executeFileRead() {
   addMsg('anna', cleanReply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/```([\s\S]*?)```/g,'<pre>$1</pre>').replace(/\n/g,'<br>'));
   saveChat('assistant', cleanReply);
   fridaySpeak(cleanReply);
-  document.getElementById('sendBtn').disabled = false;
+  setBusy(false);
   pendingFileData = null;
   resumeAfterSend();
 }
