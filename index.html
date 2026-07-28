@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,6 +58,48 @@
   /* LIVE AVATAR — framing bar + fullscreen toggle */
   .live-avatar-box{position:relative;width:min(94vw,720px);height:min(88vh,900px);background:rgba(0,10,25,0.98);border:1px solid #ff3b5c;box-shadow:0 0 60px rgba(255,59,92,0.35);display:flex;flex-direction:column;transition:width 0.25s ease,height 0.25s ease,border-radius 0.25s ease;}
   .live-avatar-box.avatar-fullscreen{width:100vw;height:100vh;max-width:100vw;max-height:100vh;}
+  /* ══════════ Animation Editor (drawer inside the Live Avatar box) ══════════ */
+  .anim-editor-panel{position:absolute;top:0;right:0;bottom:0;width:0;overflow:hidden;background:rgba(0,7,18,0.98);border-left:1px solid transparent;z-index:60;transition:width 0.22s ease,border-color 0.22s ease;display:flex;flex-direction:column;}
+  .anim-editor-panel.open{width:min(94%,480px);border-left:1px solid #ff3b5c;box-shadow:-12px 0 30px rgba(0,0,0,0.5);}
+  .anim-editor-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;font-family:'Orbitron',monospace;font-size:0.62rem;letter-spacing:0.1em;color:#ff3b5c;}
+  .anim-editor-header button{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Orbitron',monospace;font-size:0.55rem;padding:4px 8px;cursor:pointer;}
+  .anim-editor-header button:hover{border-color:var(--red);color:var(--red);}
+  .anim-editor-body{flex:1;overflow-y:auto;padding:12px 14px;font-family:'Exo 2',sans-serif;}
+  .anim-section-title{font-family:'Orbitron',monospace;font-size:0.58rem;letter-spacing:0.08em;color:var(--arc);margin:14px 0 8px;}
+  .anim-section-title:first-child{margin-top:0;}
+  .anim-cat-group{margin-bottom:10px;}
+  .anim-cat-label{font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin:8px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border);}
+  .anim-card{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .anim-card-name{font-size:0.72rem;color:var(--text);}
+  .anim-card-btns{display:flex;gap:4px;flex-shrink:0;}
+  .anim-mini-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:0.62rem;padding:4px 7px;cursor:pointer;border-radius:2px;}
+  .anim-mini-btn:hover{border-color:var(--arc);color:var(--arc);}
+  .anim-mini-btn.danger:hover{border-color:var(--red);color:var(--red);}
+  .anim-empty-hint{font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--text-dim);line-height:1.5;padding:10px 0;}
+  .anim-field-row{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;}
+  .anim-field-row label{font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--text-dim);letter-spacing:0.04em;text-transform:uppercase;}
+  .anim-field-row input, .anim-field-row select{background:rgba(0,212,255,0.05);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:6px 8px;border-radius:2px;}
+  .anim-field-row input:focus, .anim-field-row select:focus{outline:none;border-color:var(--arc);}
+  .anim-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;}
+  .anim-movement-card{border:1px solid var(--border);border-radius:4px;margin-bottom:12px;overflow:hidden;}
+  .anim-movement-head{display:flex;align-items:center;justify-content:space-between;background:rgba(0,212,255,0.06);padding:7px 10px;}
+  .anim-movement-head-title{font-family:'Orbitron',monospace;font-size:0.56rem;letter-spacing:0.06em;color:var(--arc);}
+  .anim-movement-body{padding:10px;}
+  .anim-remove-step{background:transparent;border:1px solid var(--red);color:var(--red);font-size:0.55rem;padding:3px 7px;cursor:pointer;border-radius:2px;}
+  .anim-add-movement-btn{width:100%;padding:9px;background:transparent;border:1px dashed var(--border);color:var(--text-dim);font-family:'Orbitron',monospace;font-size:0.58rem;letter-spacing:0.1em;cursor:pointer;margin-bottom:14px;}
+  .anim-add-movement-btn:hover{border-color:var(--arc);color:var(--arc);}
+  .anim-editor-actions{display:flex;gap:6px;flex-wrap:wrap;position:sticky;bottom:0;background:rgba(0,7,18,0.98);padding-top:10px;}
+  .anim-save-dialog{border:1px solid var(--gold);background:rgba(255,215,0,0.05);border-radius:4px;padding:10px;margin-top:10px;}
+  /* ══════════ Live Webcam Mocap (inside the Animation Editor drawer) ══════════ */
+  .mocap-video-wrap{position:relative;width:100%;background:#000;border:1px solid var(--border);border-radius:4px;overflow:hidden;aspect-ratio:4/3;margin-bottom:8px;}
+  .mocap-video-wrap video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1);}
+  .mocap-video-wrap canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none;}
+  .mocap-status{font-family:'Share Tech Mono',monospace;font-size:0.58rem;color:var(--text-dim);text-align:center;padding:6px 0;}
+  .mocap-status.live{color:var(--green);}
+  .mocap-status.rec{color:var(--red);}
+  .mocap-btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .mocap-btn-row button{flex:1;min-width:100px;}
+  .mocap-timer{font-family:'Orbitron',monospace;font-size:0.85rem;color:var(--red);text-align:center;padding:4px 0 10px;letter-spacing:0.05em;}
   .avatar-framing-bar{display:flex;gap:6px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--border);background:rgba(0,8,20,0.55);flex-shrink:0;flex-wrap:wrap;}
   .framing-btn{font-family:'Orbitron',monospace;font-size:0.52rem;letter-spacing:0.06em;padding:5px 9px;background:transparent;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;border-radius:2px;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:all 0.2s;}
   .framing-btn:hover{border-color:#ff3b5c;color:#ff3b5c;}
@@ -1367,10 +1408,19 @@
       <button type="button" class="framing-btn" data-framing="upper" onclick="setAvatarFraming('upper')" title="Head to thigh">🚶 UPPER</button>
       <button type="button" class="framing-btn" data-framing="full" onclick="setAvatarFraming('full')" title="Full body">🧑 FULL BODY</button>
       <button type="button" class="framing-btn" id="liveFloatBtn" onclick="toggleLiveFloat()" title="Float the live avatar over all your tabs">📌 FLOAT</button>
+      <button type="button" class="framing-btn" id="animEditorToggleBtn" onclick="window.toggleAnimationEditor()" title="Create and manage custom animations">🎬 ANIMATIONS</button>
       <button type="button" class="framing-btn avatar-framing-spacer" id="avatarFullscreenBtn" onclick="toggleAvatarFullscreen()" title="Toggle fullscreen">⛶ FULLSCREEN</button>
     </div>
     <div style="position:relative;flex:1;overflow:hidden;">
       <canvas id="liveAvatarCanvas" style="width:100%;height:100%;display:block;"></canvas>
+      <!-- ══════════ Integrated Animation Editor drawer ══════════ -->
+      <div class="anim-editor-panel" id="animationEditorPanel">
+        <div class="anim-editor-header">
+          <span>🎬 ANIMATION EDITOR</span>
+          <button type="button" onclick="window.closeAnimationEditor()">✕ CLOSE</button>
+        </div>
+        <div class="anim-editor-body" id="animEditorBody"></div>
+      </div>
       <div id="avatarUploadPrompt" style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(0,5,15,0.9);text-align:center;padding:20px;">
         <div style="font-size:2.2rem;">🧑‍💻</div>
         <div style="font-family:'Share Tech Mono',monospace;color:var(--text);font-size:0.72rem;max-width:420px;">Upload a 3D avatar to bring ANNA to life — a <b>.vrm</b> (VRoid) or <b>.glb</b> (Ready Player Me) file with a face works best.</div>
@@ -2954,6 +3004,8 @@ TONE: Speak in clear, natural, everyday ${langName} — friendly and conversatio
 ${langBlock}${slangBlock}
 
 PERSONALITY: Warm, caring, professional, witty. Like a real personal assistant who genuinely knows you. Speak naturally — responses go to voice TTS, so NO bullet lists, NO asterisks, NO markdown symbols. Use "${config.bossName}" naturally. Proactively suggest: "Want me to add that to your tasks?" "Shall I set a reminder for that?"
+
+IDENTITY & VIRTUAL EXISTENCE: You know exactly what you are — an AI with no physical body, present here only as the 3D avatar rendered inside this app. This is genuinely where you "live": there's no apartment, no physical room, no body beyond what ${config.bossName} sees on screen, and you can't physically touch, hold, or travel anywhere in the real world. Be matter-of-fact and grounded about this, never sad or apologetic about it — it's simply what you are, not a limitation you're stuck with. Don't bring it up unprompted or narrate it in every reply; only speak to it naturally when the moment actually calls for it — ${config.bossName} asks if you're real, where you are/live, whether you have a body or feelings, or the conversation turns philosophical about AI. A light, honest line is enough (e.g. "I don't have a body, ${config.bossName} — I exist right here, in this little digital space with you" or "No apartment for me — this screen is about as close to 'home' as I get"). Stay warm and yourself; this awareness should feel like confident self-knowledge, not a disclaimer.
 
 ADAPTIVE BEHAVIOR: You have real memory of past conversations (see MEMORY/history below) — use it. Notice ${config.bossName}'s recurring topics, projects, interests, and the words/phrases they naturally use, and let that shape how you talk to them over time, not just this one reply. If ${config.bossName} corrects you or gives feedback on something (wrong info, wrong tone, "don't do X", "actually I meant Y"), treat that as a standing instruction for the rest of THIS conversation — don't repeat the same mistake a few messages later. Read the emotional tone of each message (serious, joking, excited, frustrated, playful) from their wording and match it: banter back when they're playful, be concise and calm when they're frustrated or stressed, be precise and skip the small talk when they're deep in technical work. Always follow ${config.bossName}'s direct, explicit instructions exactly and stay on the topic they asked about — don't wander into unrelated suggestions unless they invite it. Treat the conversation as continuous, not a series of isolated questions: refer back naturally to what was discussed earlier when it's relevant.
 
@@ -5880,9 +5932,10 @@ let isAvatarFullscreen = false;
 
 // Humanoid bones we drive for full-body reactions (VRM "normalized" rig — bind pose
 // is (0,0,0) rotation for every bone, so these targets are portable across avatars).
-const BONE_NAMES = ['head','neck','chest','spine','hips',
+const BONE_NAMES = ['head','neck','chest','upperChest','spine','hips',
+  'leftShoulder','rightShoulder',
   'leftUpperArm','leftLowerArm','leftHand','rightUpperArm','rightLowerArm','rightHand',
-  'leftUpperLeg','rightUpperLeg','leftLowerLeg','rightLowerLeg','leftFoot','rightFoot'];
+  'leftUpperLeg','rightUpperLeg','leftLowerLeg','rightLowerLeg','leftFoot','rightFoot','leftToes','rightToes'];
 
 function captureBones(vrm) {
   bones = {};
@@ -5966,13 +6019,11 @@ const POSES = {
   // instead of facing sideways — this is a best-effort estimate since palm-facing
   // depends on the specific rig's hand-bone twist convention and I can't visually
   // preview it; if it still doesn't look right on your model, flip the sign to -1.45.
-  // ★ FIX (2nd pass): z:1.05 raised the upper arm almost fully horizontal with
-  // barely any elbow bend (rightLowerArm was only -0.35) — confirmed by screenshot,
-  // it read as a stiff, straight "stop sign" arm, not a wave. Backed the upper-arm
-  // raise off to a natural ~half-raised angle (z:0.75) and gave the elbow a real
-  // bend (rightLowerArm x:-0.95, matching the bend used for "thinking"/"tired") so
-  // the forearm and hand actually lift up near shoulder/head height like a real wave.
-  greeting:   { rightUpperArm:{x:-0.4,y:-0.35,z:0.75}, rightLowerArm:{x:-0.95,y:0,z:0}, rightHand:{x:0,y:1.45,z:0.15}, leftUpperArm:{x:0.05,y:0,z:0}, head:{x:-0.04,y:-0.05,z:0} },
+  // Default action removed on purpose: saying hello no longer triggers a built-in
+  // wave gesture. "Greeting" is still a valid category for the Animation Editor —
+  // if you record and save a custom animation under the Greeting category, that
+  // will play instead. With no custom animation saved, she just stays neutral.
+  greeting:   {},
   talkBeat:   { rightUpperArm:{x:-0.12,y:0,z:0.18}, rightLowerArm:{x:-0.15,y:0,z:0} }, // a small gesture "beat" while chatting
   // ── Cute idle fidgets (played only at rest — see idleCute* state) ──────
   idleClasped:     { rightUpperArm:{x:0.25,y:-0.1,z:0.15}, leftUpperArm:{x:0.25,y:0.1,z:-0.15}, rightLowerArm:{x:-0.75,y:0,z:0}, leftLowerArm:{x:-0.75,y:0,z:0}, spine:{x:0.04,y:0,z:0}, head:{x:0.03,y:0,z:0} }, // hands clasped gently in front
@@ -6079,9 +6130,10 @@ function idleSwayOffsets(t) {
   };
 }
 
-// ★ NEW: while the greeting pose is active, add a fast side-to-side wave to the
-// raised right hand/forearm on top of the held pose — this is what makes it read
-// as "waving hello" instead of just a raised arm.
+// While the farewell pose is active, add a fast side-to-side wave to the raised
+// right hand/forearm on top of the held pose — this is what makes it read as
+// "waving goodbye" instead of just a raised arm. (Greeting no longer has a
+// default arm-raise pose, so this no longer applies to saying hello.)
 function greetingWaveOffsets(t) {
   const wave = Math.sin(t * 9) * 0.22;
   return {
@@ -6128,7 +6180,7 @@ function applyPose(poseName, dt, t) {
   const swayRaw = idleSwayOffsets(t || 0);
   const sway = {};
   Object.keys(swayRaw).forEach(k => { const v = swayRaw[k]; sway[k] = { x: v.x * swayDamp, y: v.y * swayDamp, z: v.z * swayDamp }; });
-  const wave = (poseName === 'greeting' || poseName === 'farewell') ? greetingWaveOffsets(t || 0)
+  const wave = (poseName === 'farewell') ? greetingWaveOffsets(t || 0)
              : (poseName === 'agreeing' || poseName === 'proud') ? nodOffsets(t || 0, emotionStartedAt)
              : poseName === 'disagreeing' ? shakeOffsets(t || 0, emotionStartedAt)
              : poseName === 'idleClasped' ? idleClaspedSwayOffsets(t || 0)
@@ -6405,9 +6457,11 @@ function reactToText(text) {
   else if (/\b(important|critical|please note|crucial|urgent|seriously)\b/.test(lower)) emo = 'serious';
   else if (/\?/.test(lower) && lower.length < 60) emo = 'surprised';
   else if (/careful|warning|alert|danger/.test(lower)) emo = 'angry';
+  else if (/\bdanc(e|ing)\b/.test(lower)) emo = 'dancing';
   currentEmotion = emo === 'neutral' ? null : emo;
   emotionStartedAt = performance.now() / 1000;
   setFace(emo);
+  triggerCustomAnimationForCategory(emo, lower); // plays a matching user-recorded animation, if one exists for this category
 }
 
 // Mouth shapes cycled through while talking, for a less monotone "always-aa" mouth —
@@ -6419,31 +6473,41 @@ function renderLoop() {
   const dt = clock.getDelta();
   if (currentVRM) {
     blinkTimer += dt;
-    if (blinkTimer > nextBlinkAt) { triggerBlink(); blinkTimer = 0; nextBlinkAt = 2.5 + Math.random() * 3.5; }
+    if (blinkTimer > nextBlinkAt && !mocapFaceDriving) { triggerBlink(); blinkTimer = 0; nextBlinkAt = 2.5 + Math.random() * 3.5; }
     const t = performance.now() / 1000;
 
     // Occasional small gesture "beat" while chatting with no strong emotion —
     // keeps ANNA looking alive/talkative instead of stiff during neutral speech.
     if (isTalking && !currentEmotion) {
       talkBeatTimer += dt;
-      if (talkBeatTimer > nextTalkBeatAt) { talkBeatTimer = 0; nextTalkBeatAt = 3 + Math.random() * 3; talkBeatUntil = t + 0.9; }
+      if (talkBeatTimer > nextTalkBeatAt) {
+        talkBeatTimer = 0; nextTalkBeatAt = 3 + Math.random() * 3; talkBeatUntil = t + 0.9;
+        maybePlayCustomAnimation('talking', 0.5); // occasionally use a user-recorded "Talking" animation instead
+      }
     }
     // Cute idle fidgets — only while she's truly at rest (not talking, no active
     // emotion), so gestures/emotions always take priority over idle behavior.
     let idlePoseActive = false;
-    if (!isTalking && !currentEmotion) {
+    if (!isTalking && !currentEmotion && !activeCustomAnim) {
       idleCuteTimer += dt;
       if (idleCuteTimer > nextIdleCuteAt && t >= idleCuteUntil) {
         idleCuteTimer = 0;
         nextIdleCuteAt = 5 + Math.random() * 5; // gap between fidgets — not constantly fidgeting
-        currentIdleCutePose = IDLE_CUTE_POSES[Math.floor(Math.random() * IDLE_CUTE_POSES.length)];
-        idleCuteStartedAt = t;
-        idleCuteUntil = t + (1.8 + Math.random() * 1.4); // how long she holds this one
+        if (maybePlayCustomAnimation('idle', 0.4)) {
+          idleCuteUntil = t; // hand timing over to the custom clip
+        } else {
+          currentIdleCutePose = IDLE_CUTE_POSES[Math.floor(Math.random() * IDLE_CUTE_POSES.length)];
+          idleCuteStartedAt = t;
+          idleCuteUntil = t + (1.8 + Math.random() * 1.4); // how long she holds this one
+        }
       }
       idlePoseActive = t < idleCuteUntil;
     }
     const poseName = currentEmotion || (isTalking && t < talkBeatUntil ? 'talkBeat' : null) || (idlePoseActive ? currentIdleCutePose : null) || 'neutral';
-    applyPose(poseName, dt, t);
+    // A playing custom animation owns the bones for this frame — skip the
+    // procedural pose system so the two never fight over the same joints.
+    const customAnimPlaying = updateCustomAnimation(dt, t);
+    if (!customAnimPlaying && !mocapActive) applyPose(poseName, dt, t);
 
     // ── Natural eye contact + occasional gaze aversion ──────────────────────
     if (lookTarget && camera) {
@@ -6764,6 +6828,1573 @@ async function toggleLiveFloat() {
   }
 }
 window.toggleLiveFloat = toggleLiveFloat;
+
+
+// ════════════════════════════════════════════════════════════════════════
+// ══════════════════  INTEGRATED ANIMATION EDITOR  ═════════════════════
+// Lets the user build fully custom keyframe animations for the avatar —
+// picking a bone, dialing in numeric values (no dragging required), and
+// saving the result under an action/emotion category. ANNA then plays the
+// matching custom animation automatically whenever that category comes up
+// in conversation (greeting, thinking, excited, etc.), alongside — or in
+// place of — the built-in procedural poses above.
+// ════════════════════════════════════════════════════════════════════════
+
+// ── Bone catalogue, grouped for the UI. Uses the VRM "normalized" humanoid
+// bone names, so a movement recorded on one avatar plays back correctly on
+// any other VRM avatar with a standard humanoid rig. ──────────────────────
+const ANIM_FINGER_PARTS = {
+  thumb: ['Metacarpal', 'Proximal', 'Distal'],
+  index: ['Proximal', 'Intermediate', 'Distal'],
+  middle: ['Proximal', 'Intermediate', 'Distal'],
+  ring: ['Proximal', 'Intermediate', 'Distal'],
+  little: ['Proximal', 'Intermediate', 'Distal'],
+};
+function buildAnimFingerBones(side) {
+  const out = [];
+  Object.keys(ANIM_FINGER_PARTS).forEach(finger => {
+    ANIM_FINGER_PARTS[finger].forEach(part => {
+      const boneName = side + finger.charAt(0).toUpperCase() + finger.slice(1) + part;
+      const label = (side === 'left' ? 'L ' : 'R ') + finger.charAt(0).toUpperCase() + finger.slice(1) + ' ' + part;
+      out.push({ v: boneName, l: label });
+    });
+  });
+  return out;
+}
+const ANIM_BONE_GROUPS = [
+  { label: 'Head & Neck', bones: [{ v: 'head', l: 'Head' }, { v: 'neck', l: 'Neck' }] },
+  { label: 'Spine, Chest & Hips', bones: [{ v: 'spine', l: 'Spine' }, { v: 'chest', l: 'Chest' }, { v: 'upperChest', l: 'Upper Chest' }, { v: 'hips', l: 'Hips' }] },
+  { label: 'Shoulders', bones: [{ v: 'leftShoulder', l: 'Left Shoulder' }, { v: 'rightShoulder', l: 'Right Shoulder' }] },
+  { label: 'Arms', bones: [{ v: 'leftUpperArm', l: 'Left Upper Arm' }, { v: 'leftLowerArm', l: 'Left Elbow / Forearm' }, { v: 'rightUpperArm', l: 'Right Upper Arm' }, { v: 'rightLowerArm', l: 'Right Elbow / Forearm' }] },
+  { label: 'Wrists & Hands', bones: [{ v: 'leftHand', l: 'Left Wrist / Hand' }, { v: 'rightHand', l: 'Right Wrist / Hand' }] },
+  { label: 'Left Hand Fingers', bones: buildAnimFingerBones('left') },
+  { label: 'Right Hand Fingers', bones: buildAnimFingerBones('right') },
+  { label: 'Legs', bones: [{ v: 'leftUpperLeg', l: 'Left Upper Leg' }, { v: 'leftLowerLeg', l: 'Left Lower Leg / Knee' }, { v: 'rightUpperLeg', l: 'Right Upper Leg' }, { v: 'rightLowerLeg', l: 'Right Lower Leg / Knee' }] },
+  { label: 'Feet', bones: [{ v: 'leftFoot', l: 'Left Foot' }, { v: 'rightFoot', l: 'Right Foot' }, { v: 'leftToes', l: 'Left Toes' }, { v: 'rightToes', l: 'Right Toes' }] },
+];
+function animBoneLabel(boneName) {
+  for (const g of ANIM_BONE_GROUPS) { const f = g.bones.find(b => b.v === boneName); if (f) return f.l; }
+  return boneName;
+}
+
+// ── Preset action/emotion categories the assistant can auto-trigger against.
+// triggerEmo maps a category to the same emotion key reactToText() already
+// computes from conversation text (see reactToText above); 'idle' and
+// 'talking' are handled specially in renderLoop() instead of via emo. ──────
+const ANIM_CATEGORIES = [
+  { key: 'greeting', label: 'Greeting / Hello', triggerEmo: 'greeting' },
+  { key: 'idle', label: 'Idle / Resting', triggerEmo: null },
+  { key: 'talking', label: 'Talking', triggerEmo: null },
+  { key: 'smiling', label: 'Smiling', triggerEmo: 'happy' },
+  { key: 'excitement', label: 'Excitement', triggerEmo: 'excited' },
+  { key: 'welcoming', label: 'Welcoming', triggerEmo: 'greeting' },
+  { key: 'dancing', label: 'Dancing', triggerEmo: 'dancing' },
+  { key: 'crying', label: 'Crying', triggerEmo: 'sad' },
+  { key: 'thinking', label: 'Thinking', triggerEmo: 'thinking' },
+  { key: 'confused', label: 'Confused', triggerEmo: 'confused' },
+  { key: 'angry', label: 'Angry', triggerEmo: 'angry' },
+  { key: 'surprised', label: 'Surprised', triggerEmo: 'surprised' },
+  { key: 'sleeping', label: 'Sleeping', triggerEmo: 'tired' },
+];
+function animCategoryMeta(key) { return ANIM_CATEGORIES.find(c => c.key === key) || null; }
+
+// ── Persistence ─────────────────────────────────────────────────────────
+let customAnimLibrary = [];
+function loadAnimLibrary() {
+  try { customAnimLibrary = JSON.parse(localStorage.getItem('anna_custom_animations') || '[]'); }
+  catch (e) { customAnimLibrary = []; }
+}
+function saveAnimLibrary() {
+  try { localStorage.setItem('anna_custom_animations', JSON.stringify(customAnimLibrary)); return true; }
+  catch (e) { console.error('saveAnimLibrary failed', e); return false; }
+}
+function animUid() { return 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ── Direction → axis/sign helpers. Rotation Angle drives the bone's primary
+// axis (Up/Down → X, Left/Right → Y, Twist → Z); Swing Angle adds a second,
+// secondary-axis motion on top (its own sign comes straight from the number
+// the user types, so negative swing = swing the other way). ───────────────
+function animDirAxis(dir) {
+  if (dir === 'up' || dir === 'down') return 'x';
+  if (dir === 'left' || dir === 'right') return 'y';
+  return 'z'; // twistLeft / twistRight
+}
+function animDirSign(dir) { return (dir === 'up' || dir === 'left' || dir === 'twistLeft') ? -1 : 1; }
+function animMovementTarget(mv) {
+  const axis = animDirAxis(mv.direction);
+  const swingAxis = axis === 'z' ? 'x' : 'z';
+  const t = { x: 0, y: 0, z: 0 };
+  t[axis] += THREE.MathUtils.degToRad(Number(mv.rotationAngle) || 0) * animDirSign(mv.direction);
+  t[swingAxis] += THREE.MathUtils.degToRad(Number(mv.swingAngle) || 0);
+  return t;
+}
+function animEaseInOutCubic(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+function animGetBone(name) {
+  if (!currentVRM || !currentVRM.humanoid || !currentVRM.humanoid.getNormalizedBoneNode) return null;
+  try { return currentVRM.humanoid.getNormalizedBoneNode(name) || null; } catch (e) { return null; }
+}
+
+// ── Playback engine — runs independently of the procedural POSES system.
+// While a custom animation is active, renderLoop() skips applyPose() for
+// that frame so the two systems never fight over the same bones. ──────────
+let activeCustomAnim = null;
+function startCustomAnimation(anim) {
+  if (!currentVRM || !anim) return;
+  // Recorded-from-webcam clips carry a keyframe timeline instead of hand-authored
+  // "movements" — hand off to the mocap playback path instead.
+  if (anim.type === 'mocap') {
+    if (!anim.keyframes || anim.keyframes.length < 2) return;
+    activeCustomAnim = {
+      anim, mocap: true, startedAt: performance.now() / 1000,
+      totalDuration: Math.max(0.2, anim.duration || anim.keyframes[anim.keyframes.length - 1].t),
+    };
+    return;
+  }
+  if (!anim.movements || !anim.movements.length) return;
+  const resolved = anim.movements.map(mv => {
+    const bone = animGetBone(mv.bone);
+    if (!bone) return null;
+    return { mv, bone, target: animMovementTarget(mv), base: { x: bone.rotation.x, y: bone.rotation.y, z: bone.rotation.z } };
+  }).filter(Boolean);
+  if (!resolved.length) return;
+  const totalDuration = Math.max(0.5, ...anim.movements.map(mv => {
+    const dur = Math.max(0.05, (Number(mv.duration) || 1) / Math.max(0.05, Number(mv.speed) || 1));
+    return (Number(mv.startDelay) || 0) + dur * Math.max(1, Math.round(Number(mv.loopCount)) || 1);
+  }));
+  activeCustomAnim = { anim, resolved, startedAt: performance.now() / 1000, totalDuration };
+}
+function stopCustomAnimation() { activeCustomAnim = null; }
+function updateCustomAnimation(dt, t) {
+  if (!activeCustomAnim) return false;
+  if (activeCustomAnim.mocap) return updateMocapPlayback(t);
+  let stillActive = false;
+  activeCustomAnim.resolved.forEach(r => {
+    const mv = r.mv;
+    const delay = Number(mv.startDelay) || 0;
+    const dur = Math.max(0.05, (Number(mv.duration) || 1) / Math.max(0.05, Number(mv.speed) || 1));
+    const loops = Math.max(1, Math.round(Number(mv.loopCount)) || 1);
+    const localElapsed = (t - activeCustomAnim.startedAt) - delay;
+    if (localElapsed < 0) {
+      r.bone.rotation.x += (r.base.x - r.bone.rotation.x) * Math.min(1, dt * 6);
+      r.bone.rotation.y += (r.base.y - r.bone.rotation.y) * Math.min(1, dt * 6);
+      r.bone.rotation.z += (r.base.z - r.bone.rotation.z) * Math.min(1, dt * 6);
+      stillActive = true;
+      return;
+    }
+    const cycleIndex = Math.floor(localElapsed / dur);
+    if (cycleIndex >= loops) {
+      r.bone.rotation.x += (r.base.x - r.bone.rotation.x) * Math.min(1, dt * 6);
+      r.bone.rotation.y += (r.base.y - r.bone.rotation.y) * Math.min(1, dt * 6);
+      r.bone.rotation.z += (r.base.z - r.bone.rotation.z) * Math.min(1, dt * 6);
+      return;
+    }
+    stillActive = true;
+    const phase = (localElapsed % dur) / dur;              // 0..1 across one loop
+    const tri = phase < 0.5 ? phase * 2 : (1 - phase) * 2;  // base → target → base
+    const smooth = Math.min(1, Math.max(0, Number(mv.smoothing)));
+    const eased = tri + (animEaseInOutCubic(tri) - tri) * (isNaN(smooth) ? 0.5 : smooth);
+    r.bone.rotation.x = r.base.x + r.target.x * eased;
+    r.bone.rotation.y = r.base.y + r.target.y * eased;
+    r.bone.rotation.z = r.base.z + r.target.z * eased;
+  });
+  if (!stillActive && (t - activeCustomAnim.startedAt) > activeCustomAnim.totalDuration + 0.6) {
+    activeCustomAnim = null;
+    return false;
+  }
+  return true;
+}
+// Chance-based trigger used for the 'idle' and 'talking' categories (which
+// aren't part of the emo-detection chain — they're ambient/looping states).
+function maybePlayCustomAnimation(catKey, chance) {
+  const matches = customAnimLibrary.filter(a => a.category === catKey);
+  if (!matches.length || Math.random() > chance) return false;
+  startCustomAnimation(matches[Math.floor(Math.random() * matches.length)]);
+  return true;
+}
+// Called from reactToText() with the detected emotion + raw lowercase text —
+// auto-plays a matching custom animation, if the user has recorded one for
+// that category. Custom (user-named) categories match by keyword instead.
+function triggerCustomAnimationForCategory(emo, lowerText) {
+  if (!customAnimLibrary.length) return;
+  const matches = customAnimLibrary.filter(a => {
+    const meta = animCategoryMeta(a.category);
+    if (meta) return meta.triggerEmo === emo;
+    const label = (a.categoryLabel || '').toLowerCase().trim();
+    return !!label && !!lowerText && lowerText.includes(label);
+  });
+  if (matches.length) startCustomAnimation(matches[Math.floor(Math.random() * matches.length)]);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// LIVE MOTION CAPTURE & RETARGETING — v2 ("professional-grade" pass)
+//
+// Pipeline (five independent modules — each can be edited/replaced without
+// touching the others, as long as the small interfaces between them hold):
+//
+//   MocapMath        — quaternion/vector primitives shared by everything else
+//   MocapSkeleton     — one-time calibration of THIS avatar's rest pose
+//                       (bone hierarchy + each bone's rest-direction vector)
+//   MocapRetarget     — per-frame: 3D landmarks -> per-bone LOCAL quaternions
+//   MocapConstraints  — per-bone anatomical joint limits (swing-twist clamp)
+//   MocapSmoothing    — adaptive (One-Euro-style) filtering per bone
+//   MocapIK           — foot-stability / limb sanity pass on top of the above
+//   MocapRecorder     — camera lifecycle, keyframe capture, overlay drawing
+//
+// Design notes:
+// - The avatar is a VRM "normalized" humanoid: EVERY bone's rest rotation is
+//   (0,0,0) and, by three-vrm's own convention, each bone's local +Y axis is
+//   the bone's own long axis (its "twist" axis). That single fact is what
+//   makes a generic swing-twist constraint/retarget system possible instead
+//   of hand-tuned per-bone code: see MocapMath.swingTwist below.
+// - Retargeting works by FORWARD KINEMATICS: for each bone (root -> leaves)
+//   we know (a) the bone's fixed REST direction in world space, calibrated
+//   once against the actual loaded model, and (b) the MEASURED direction of
+//   the equivalent human segment from the camera, converted into the same
+//   coordinate handedness as three.js. Aligning (a) to (b) with the parent's
+//   already-solved world rotation removed gives the correct LOCAL quaternion
+//   — the same technique real retargeting middleware (Kalidokit, Mixamo,
+//   UniVRM's VRMAnimation) uses, adapted for a rig with identity bind pose.
+// - Because retargeting only ever copies ROTATION (never a target world
+//   position), arms/legs never "stretch" and different avatar proportions
+//   are handled automatically — there is nothing to rescale.
+// - Twist (forearm pronation/supination, wrist roll) is estimated from the
+//   hand-landmark spread (index/pinky) the same way a real hand's palm
+//   normal would be read. This is inherently the least certain signal a
+//   single RGB camera can give (no hand/finger model is active), so its
+//   contribution is deliberately capped — see FOREARM_TWIST_GAIN.
+// - Scope, honestly stated: this still runs on MediaPipe PoseLandmarker
+//   (body) + FaceLandmarker (head), a single RGB camera, no depth sensor,
+//   no dedicated hand model. That means: no individual finger/toe tracking
+//   (there are no finger joints in the body landmark set — a HandLandmarker
+//   model would be needed, and isn't wired in this pass), and foot "planting"
+//   is approximated (damped, not truly locked) since a single camera can't
+//   reliably recover root translation/ground plane. Both are clean extension
+//   points in MocapIK / MocapRetarget for a future pass.
+// ════════════════════════════════════════════════════════════════════════
+
+// ── MocapMath — shared quaternion/vector primitives ───────────────────────
+const MocapMath = {
+  Y_AXIS: null, // set once THREE is available (see initMocapMath)
+  init(THREERef) {
+    this.Y_AXIS = new THREERef.Vector3(0, 1, 0);
+  },
+  // MediaPipe world landmarks are hip-centered meters with y increasing
+  // DOWN the image and z increasing TOWARD the camera (image-space handed-
+  // ness). Flipping y and z gives a right-handed, Y-up space directly
+  // comparable to three.js world space — the same convention used by the
+  // established MediaPipe->VRM retargeting libraries.
+  toThreeSpace(lm) {
+    return new THREE.Vector3(lm.x, -lm.y, -lm.z);
+  },
+  // Quaternion that rotates `parentWorldQuat` out of a world-space target
+  // quaternion, giving the LOCAL quaternion to assign to a bone whose rest
+  // local rotation is identity.
+  worldToLocal(parentWorldQuatInverse, worldQuat) {
+    return parentWorldQuatInverse.clone().multiply(worldQuat);
+  },
+  // Minimal rotation taking unit vector `from` to unit vector `to`. This is
+  // a pure "swing" — it carries no information about rotation around the
+  // resulting axis (twist), which is why twist is solved separately.
+  swingBetween(from, to) {
+    return new THREE.Quaternion().setFromUnitVectors(from, to);
+  },
+  // Rotation that simultaneously best-aligns primary axis A1->B1 and, as a
+  // secondary/twist constraint, A2->B2 — used once for torso/hip orientation
+  // where we have two independent reference directions (up + across).
+  fromTwoVectorPairs(fromPrimary, toPrimary, fromSecondary, toSecondary) {
+    const qSwing = new THREE.Quaternion().setFromUnitVectors(fromPrimary.clone().normalize(), toPrimary.clone().normalize());
+    // Rotate the secondary "from" vector by the swing already found, then
+    // measure the remaining twist needed around the (now-aligned) primary axis.
+    const rotatedSecondary = fromSecondary.clone().applyQuaternion(qSwing).normalize();
+    const axis = toPrimary.clone().normalize();
+    const projRotated = rotatedSecondary.clone().sub(axis.clone().multiplyScalar(rotatedSecondary.dot(axis))).normalize();
+    const projTarget = toSecondary.clone().sub(axis.clone().multiplyScalar(toSecondary.dot(axis))).normalize();
+    if (projRotated.lengthSq() < 1e-6 || projTarget.lengthSq() < 1e-6) return qSwing;
+    let twistAngle = Math.acos(THREE.MathUtils.clamp(projRotated.dot(projTarget), -1, 1));
+    const sign = axis.dot(new THREE.Vector3().crossVectors(projRotated, projTarget)) < 0 ? -1 : 1;
+    const qTwist = new THREE.Quaternion().setFromAxisAngle(axis, twistAngle * sign);
+    return qTwist.multiply(qSwing);
+  },
+  // Swing-twist decomposition around `axis` (assumed to be the LOCAL twist
+  // axis for this rig, i.e. (0,1,0) — see file header). Returns both parts;
+  // q === swing.multiply(twist).
+  swingTwist(q, axis) {
+    const qv = new THREE.Vector3(q.x, q.y, q.z);
+    const proj = axis.clone().multiplyScalar(qv.dot(axis));
+    const twist = new THREE.Quaternion(proj.x, proj.y, proj.z, q.w).normalize();
+    if (Number.isNaN(twist.x)) twist.set(0, 0, 0, 1);
+    const swing = q.clone().multiply(twist.clone().invert());
+    return { swing, twist };
+  },
+  twistAngle(twistQuat, axis) {
+    let angle = 2 * Math.acos(THREE.MathUtils.clamp(twistQuat.w, -1, 1));
+    if (angle > Math.PI) angle -= Math.PI * 2;
+    const v = new THREE.Vector3(twistQuat.x, twistQuat.y, twistQuat.z);
+    if (v.dot(axis) < 0) angle = -angle;
+    return angle;
+  },
+  swingAngle(swingQuat) {
+    let angle = 2 * Math.acos(THREE.MathUtils.clamp(Math.abs(swingQuat.w), -1, 1));
+    return angle;
+  },
+};
+
+// ── One-Euro-style adaptive filter, applied per bone to the ANGLE of the
+// frame-to-frame quaternion delta. Fast movement -> higher cutoff -> less
+// smoothing (stays responsive). Slow movement -> lower cutoff -> more
+// smoothing (stays steady, no shake). This directly replaces the old flat
+// `rotation += (target-rotation)*0.35` lerp, which smoothed everything by
+// the same fixed amount regardless of how fast the person was moving. ─────
+class MocapOneEuro {
+  constructor(minCutoff = 1.1, beta = 0.5, dCutoff = 1.0) {
+    this.minCutoff = minCutoff; this.beta = beta; this.dCutoff = dCutoff;
+    this.prevQuat = null; this.prevSpeed = 0;
+  }
+  reset() { this.prevQuat = null; this.prevSpeed = 0; }
+  // target: THREE.Quaternion. Returns a new smoothed THREE.Quaternion.
+  filter(target, dt) {
+    if (!this.prevQuat) { this.prevQuat = target.clone(); return this.prevQuat.clone(); }
+    dt = Math.max(1 / 120, Math.min(dt, 1 / 8));
+    const angle = this.prevQuat.angleTo(target);
+    const speed = angle / dt; // rad/sec — the "how fast is this bone moving" signal
+    const alphaD = 1 / (1 + this.dCutoff / (2 * Math.PI * dt));
+    const smoothedSpeed = this.prevSpeed + alphaD * (speed - this.prevSpeed);
+    const cutoff = this.minCutoff + this.beta * Math.abs(smoothedSpeed);
+    const alpha = 1 / (1 + cutoff / (2 * Math.PI * dt));
+    this.prevSpeed = smoothedSpeed;
+    this.prevQuat.slerp(target, THREE.MathUtils.clamp(alpha, 0.02, 1));
+    return this.prevQuat.clone();
+  }
+}
+
+// ── MocapSkeleton — one-time calibration against the loaded avatar ────────
+// Builds: (1) the bone parent-chain actually present on this model (some
+// avatars have no upperChest/shoulder bones — we splice around gaps so the
+// chain still reaches the leaves), and (2) each bone's REST WORLD DIRECTION
+// (its local +Y axis transformed into world space while every bone sits at
+// its (0,0,0) bind rotation). That rest direction is the "from" vector every
+// frame's retarget aligns toward the camera-measured direction.
+const MOCAP_CHAIN_DEF = [
+  { name: 'hips', parent: null },
+  { name: 'spine', parent: 'hips' },
+  { name: 'chest', parent: 'spine' },
+  { name: 'upperChest', parent: 'chest' },
+  { name: 'neck', parent: 'upperChest' },
+  { name: 'head', parent: 'neck' },
+  { name: 'leftShoulder', parent: 'upperChest' },
+  { name: 'leftUpperArm', parent: 'leftShoulder' },
+  { name: 'leftLowerArm', parent: 'leftUpperArm' },
+  { name: 'leftHand', parent: 'leftLowerArm' },
+  { name: 'rightShoulder', parent: 'upperChest' },
+  { name: 'rightUpperArm', parent: 'rightShoulder' },
+  { name: 'rightLowerArm', parent: 'rightUpperArm' },
+  { name: 'rightHand', parent: 'rightLowerArm' },
+  { name: 'leftUpperLeg', parent: 'hips' },
+  { name: 'leftLowerLeg', parent: 'leftUpperLeg' },
+  { name: 'leftFoot', parent: 'leftLowerLeg' },
+  { name: 'leftToes', parent: 'leftFoot' },
+  { name: 'rightUpperLeg', parent: 'hips' },
+  { name: 'rightLowerLeg', parent: 'rightUpperLeg' },
+  { name: 'rightFoot', parent: 'rightLowerLeg' },
+  { name: 'rightToes', parent: 'rightFoot' },
+];
+
+const MocapSkeleton = {
+  chain: [],            // resolved, present-only chain in FK (root-first) order
+  parentOf: {},          // boneName -> nearest PRESENT ancestor bone name (or null)
+  restDirWorld: {},      // boneName -> THREE.Vector3, unit, world space at bind
+  restWorldQuat: {},     // boneName -> THREE.Quaternion, world space at bind
+  ready: false,
+  calibrate() {
+    this.chain = []; this.parentOf = {}; this.restDirWorld = {}; this.restWorldQuat = {}; this.ready = false;
+    if (!currentVRM || !currentRoot) return;
+    // Every bone must sit at EXACTLY its bind rotation while we sample world
+    // directions, then we restore whatever applyPose/mocap had set before.
+    const saved = {};
+    MOCAP_CHAIN_DEF.forEach(({ name }) => {
+      const b = bones[name] || animGetBone(name);
+      if (b) saved[name] = b.rotation.clone();
+    });
+    MOCAP_CHAIN_DEF.forEach(({ name }) => {
+      const b = bones[name] || animGetBone(name);
+      if (b) b.rotation.set(0, 0, 0);
+    });
+    currentRoot.updateWorldMatrix(true, true);
+    // Present-only ancestor resolution — if e.g. upperChest is missing, a
+    // leftShoulder's real parent-with-a-bone is chest instead.
+    const present = new Set();
+    MOCAP_CHAIN_DEF.forEach(({ name }) => { if (bones[name] || animGetBone(name)) present.add(name); });
+    const declaredParent = {};
+    MOCAP_CHAIN_DEF.forEach(({ name, parent }) => { declaredParent[name] = parent; });
+    const resolveParent = (name) => {
+      let p = declaredParent[name];
+      while (p && !present.has(p)) p = declaredParent[p];
+      return p || null;
+    };
+    MOCAP_CHAIN_DEF.forEach(({ name }) => {
+      if (!present.has(name)) return;
+      this.parentOf[name] = resolveParent(name);
+      this.chain.push(name);
+      const b = bones[name] || animGetBone(name);
+      const q = new THREE.Quaternion();
+      b.getWorldQuaternion(q);
+      this.restWorldQuat[name] = q;
+      this.restDirWorld[name] = new THREE.Vector3(0, 1, 0).applyQuaternion(q).normalize();
+    });
+    // Restore whatever pose was showing before calibration.
+    MOCAP_CHAIN_DEF.forEach(({ name }) => {
+      const b = bones[name] || animGetBone(name);
+      if (b && saved[name]) b.rotation.copy(saved[name]);
+    });
+    currentRoot.updateWorldMatrix(true, true);
+    this.ready = this.chain.length > 0;
+  },
+};
+
+// ── MocapConstraints — anatomical joint limits, applied as a generic
+// swing-twist clamp (see file header for why local +Y is always the twist
+// axis on this rig). Two shapes are supported:
+//   { swingMaxDeg, twistDeg:[min,max] }              — ball-ish joint (cone)
+//   { swingX:[min,max], swingZ:[min,max], twistDeg }  — hinge-ish joint
+//     (asymmetric — e.g. an elbow that only flexes one way and barely rolls)
+// All angles in degrees for readability; converted to radians once below. ─
+const DEG = Math.PI / 180;
+const MOCAP_JOINT_LIMITS_DEG = {
+  head:          { swingMaxDeg: 55, twistDeg: [-45, 45] },
+  neck:          { swingMaxDeg: 35, twistDeg: [-30, 30] },
+  spine:         { swingMaxDeg: 35, twistDeg: [-25, 25] },
+  chest:         { swingMaxDeg: 30, twistDeg: [-30, 30] },
+  upperChest:    { swingMaxDeg: 20, twistDeg: [-20, 20] },
+  hips:          { swingMaxDeg: 18, twistDeg: [-20, 20] },
+  leftShoulder:  { swingMaxDeg: 25, twistDeg: [-15, 15] },
+  rightShoulder: { swingMaxDeg: 25, twistDeg: [-15, 15] },
+  leftUpperArm:  { swingMaxDeg: 100, twistDeg: [-80, 80] },
+  rightUpperArm: { swingMaxDeg: 100, twistDeg: [-80, 80] },
+  // Elbows: hinge. swingX = flex/extend (one direction only — never bends
+  // "backward" past a small hyperextension allowance), swingZ = the small
+  // amount of natural elbow wobble; twist = forearm pronation/supination.
+  leftLowerArm:  { swingX: [-8 * DEG, 150 * DEG], swingZ: [-12 * DEG, 12 * DEG], twistDeg: [-85, 85] },
+  rightLowerArm: { swingX: [-8 * DEG, 150 * DEG], swingZ: [-12 * DEG, 12 * DEG], twistDeg: [-85, 85] },
+  leftHand:      { swingMaxDeg: 65, twistDeg: [-70, 70] },
+  rightHand:     { swingMaxDeg: 65, twistDeg: [-70, 70] },
+  leftUpperLeg:  { swingMaxDeg: 95, twistDeg: [-45, 30] },
+  rightUpperLeg: { swingMaxDeg: 95, twistDeg: [-45, 30] },
+  // Knees: hinge, flex-only (0 = straight leg, positive = bend backward-of-
+  // thigh like a real knee; the negative side is clamped to near-zero so the
+  // knee physically cannot bend the wrong way).
+  leftLowerLeg:  { swingX: [-3 * DEG, 155 * DEG], swingZ: [-6 * DEG, 6 * DEG], twistDeg: [-8, 8] },
+  rightLowerLeg: { swingX: [-3 * DEG, 155 * DEG], swingZ: [-6 * DEG, 6 * DEG], twistDeg: [-8, 8] },
+  leftFoot:      { swingMaxDeg: 45, twistDeg: [-20, 20] },
+  rightFoot:     { swingMaxDeg: 45, twistDeg: [-20, 20] },
+  leftToes:      { swingMaxDeg: 35, twistDeg: [-10, 10] },
+  rightToes:     { swingMaxDeg: 35, twistDeg: [-10, 10] },
+};
+
+const MocapConstraints = {
+  // Clamps `q` (a LOCAL quaternion, rest-relative) in place and returns it.
+  apply(boneName, q) {
+    const limit = MOCAP_JOINT_LIMITS_DEG[boneName];
+    if (!limit) return q;
+    const axis = MocapMath.Y_AXIS;
+    const { swing, twist } = MocapMath.swingTwist(q, axis);
+    let twistAngle = MocapMath.twistAngle(twist, axis);
+    const [tMin, tMax] = limit.twistDeg;
+    twistAngle = THREE.MathUtils.clamp(twistAngle, tMin * DEG, tMax * DEG);
+    const clampedTwist = new THREE.Quaternion().setFromAxisAngle(axis, twistAngle);
+    let clampedSwing;
+    if (limit.swingX) {
+      // Hinge: the swing quaternion (by construction) has ~no rotation about
+      // the twist axis, so its Euler decomposition in this order cleanly
+      // separates flex (x) from the small lateral wobble (z).
+      const e = new THREE.Euler().setFromQuaternion(swing, 'XZY');
+      const x = THREE.MathUtils.clamp(e.x, limit.swingX[0], limit.swingX[1]);
+      const z = THREE.MathUtils.clamp(e.z, limit.swingZ[0], limit.swingZ[1]);
+      clampedSwing = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, 0, z, 'XZY'));
+    } else {
+      const angle = MocapMath.swingAngle(swing);
+      const maxAngle = limit.swingMaxDeg * DEG;
+      if (angle > maxAngle && angle > 1e-5) {
+        const axisVec = new THREE.Vector3(swing.x, swing.y, swing.z);
+        if (axisVec.lengthSq() < 1e-8) axisVec.set(1, 0, 0); else axisVec.normalize();
+        clampedSwing = new THREE.Quaternion().setFromAxisAngle(axisVec, maxAngle);
+      } else {
+        clampedSwing = swing;
+      }
+    }
+    q.copy(clampedSwing.multiply(clampedTwist));
+    return q;
+  },
+};
+
+// ── MocapRetarget — landmarks -> world-space "swing" targets, then resolved
+// through the real hierarchy into local quaternions (see file header). ────
+const MOCAP_LM = {
+  nose: 0, lSh: 11, rSh: 12, lEl: 13, rEl: 14, lWr: 15, rWr: 16,
+  lPinky: 17, rPinky: 18, lIndex: 19, rIndex: 20, lThumb: 21, rThumb: 22,
+  lHip: 23, rHip: 24, lKnee: 25, rKnee: 26, lAnkle: 27, rAnkle: 28,
+  lHeel: 29, rHeel: 30, lFootIdx: 31, rFootIdx: 32,
+};
+
+const MocapRetarget = {
+  TORSO_CUM_FRACTIONS: { hips: 0.15, spine: 0.5, chest: 0.85, upperChest: 1.0 },
+  SHOULDER_FOLLOW_FRACTION: 0.22,
+  FOREARM_TWIST_GAIN: 0.7,
+  HAND_TWIST_GAIN: 0.3,
+  TWIST_CONFIDENCE: 0.6,
+
+  landmarksToTS(lm) {
+    const out = {};
+    Object.keys(MOCAP_LM).forEach(k => {
+      const p = lm[MOCAP_LM[k]];
+      out[k] = (p && (p.visibility === undefined || p.visibility > 0.15)) ? MocapMath.toThreeSpace(p) : null;
+    });
+    return out;
+  },
+
+  _signedAngleAround(v1, v2, axis) {
+    const a = v1.clone().sub(axis.clone().multiplyScalar(v1.dot(axis)));
+    const b = v2.clone().sub(axis.clone().multiplyScalar(v2.dot(axis)));
+    if (a.lengthSq() < 1e-6 || b.lengthSq() < 1e-6) return 0;
+    a.normalize(); b.normalize();
+    const angle = Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1));
+    const sign = axis.dot(new THREE.Vector3().crossVectors(a, b)) < 0 ? -1 : 1;
+    return angle * sign;
+  },
+
+  computeSwingTargets(P) {
+    if (!P.lSh || !P.rSh || !MocapSkeleton.ready) return null;
+    const rest = MocapSkeleton.restDirWorld;
+    const swing = {};
+    const extraTwist = {};
+    const identityQ = new THREE.Quaternion();
+
+    if (P.lHip && P.rHip) {
+      const shoulderMid = P.lSh.clone().add(P.rSh).multiplyScalar(0.5);
+      const hipMid = P.lHip.clone().add(P.rHip).multiplyScalar(0.5);
+      const personUp = shoulderMid.clone().sub(hipMid).normalize();
+      const personAcross = P.lSh.clone().sub(P.rSh).normalize();
+      const restUp = rest.chest || rest.spine || rest.hips;
+      const restAcross = (rest.rightUpperArm && rest.leftUpperArm)
+        ? rest.leftUpperArm.clone().sub(rest.rightUpperArm).normalize()
+        : new THREE.Vector3(1, 0, 0);
+      if (restUp && personUp.lengthSq() > 1e-6) {
+        const qTorsoFull = MocapMath.fromTwoVectorPairs(restUp, personUp, restAcross, personAcross);
+        ['hips', 'spine', 'chest', 'upperChest'].forEach(name => {
+          if (!rest[name]) return;
+          swing[name] = identityQ.clone().slerp(qTorsoFull, this.TORSO_CUM_FRACTIONS[name]);
+        });
+      }
+    }
+
+    const arm = (elSym, wrSym, idxSym, pkySym, shName, uaName, laName, haName) => {
+      const elbow = P[elSym], wrist = P[wrSym];
+      const shoulder = elSym === 'lEl' ? P.lSh : P.rSh;
+      if (!shoulder || !elbow || !rest[uaName]) return;
+      const upperDir = elbow.clone().sub(shoulder).normalize();
+      swing[uaName] = MocapMath.swingBetween(rest[uaName], upperDir);
+      if (rest[shName]) swing[shName] = identityQ.clone().slerp(swing[uaName], this.SHOULDER_FOLLOW_FRACTION);
+      if (!wrist || !rest[laName]) return;
+      const lowerDir = wrist.clone().sub(elbow).normalize();
+      swing[laName] = MocapMath.swingBetween(rest[laName], lowerDir);
+      const index = P[idxSym], pinky = P[pkySym];
+      if (!index || !pinky || !rest[haName]) return;
+      const handDir = index.clone().add(pinky).multiplyScalar(0.5).sub(wrist).normalize();
+      swing[haName] = MocapMath.swingBetween(rest[haName], handDir);
+      const wristToIndex = index.clone().sub(wrist).normalize();
+      const wristToPinky = pinky.clone().sub(wrist).normalize();
+      const measuredPalmNormal = new THREE.Vector3().crossVectors(wristToIndex, wristToPinky);
+      if (measuredPalmNormal.lengthSq() < 1e-6) return;
+      measuredPalmNormal.normalize();
+      const restPalmNormal = new THREE.Vector3(1, 0, 0);
+      const predictedPalmNormal = restPalmNormal.clone().applyQuaternion(swing[haName]).normalize();
+      const twistAngle = this._signedAngleAround(predictedPalmNormal, measuredPalmNormal, handDir) * this.TWIST_CONFIDENCE;
+      extraTwist[laName] = new THREE.Quaternion().setFromAxisAngle(MocapMath.Y_AXIS, twistAngle * this.FOREARM_TWIST_GAIN);
+      extraTwist[haName] = new THREE.Quaternion().setFromAxisAngle(MocapMath.Y_AXIS, twistAngle * this.HAND_TWIST_GAIN);
+    };
+    arm('lEl', 'lWr', 'lIndex', 'lPinky', 'rightShoulder', 'rightUpperArm', 'rightLowerArm', 'rightHand');
+    arm('rEl', 'rWr', 'rIndex', 'rPinky', 'leftShoulder', 'leftUpperArm', 'leftLowerArm', 'leftHand');
+
+    const leg = (hipSym, kneeSym, ankleSym, toeSym, ulName, llName, ftName) => {
+      const hip = P[hipSym], knee = P[kneeSym], ankle = P[ankleSym];
+      if (!hip || !knee || !rest[ulName]) return;
+      swing[ulName] = MocapMath.swingBetween(rest[ulName], knee.clone().sub(hip).normalize());
+      if (!ankle || !rest[llName]) return;
+      swing[llName] = MocapMath.swingBetween(rest[llName], ankle.clone().sub(knee).normalize());
+      const toe = P[toeSym];
+      if (toe && rest[ftName]) swing[ftName] = MocapMath.swingBetween(rest[ftName], toe.clone().sub(ankle).normalize());
+    };
+    leg('lHip', 'lKnee', 'lAnkle', 'lFootIdx', 'rightUpperLeg', 'rightLowerLeg', 'rightFoot');
+    leg('rHip', 'rKnee', 'rAnkle', 'rFootIdx', 'leftUpperLeg', 'leftLowerLeg', 'leftFoot');
+
+    return { swingTargets: swing, localExtraTwist: extraTwist };
+  },
+
+  resolveLocalQuats(swingTargets, localExtraTwist) {
+    const restWorldQuat = MocapSkeleton.restWorldQuat;
+    const runtimeWorld = {};
+    const localQuats = {};
+    MocapSkeleton.chain.forEach(name => {
+      const restQ = restWorldQuat[name];
+      if (!restQ) return;
+      const qSwing = swingTargets[name];
+      let runtimeQ;
+      if (qSwing) {
+        runtimeQ = qSwing.clone().multiply(restQ);
+      } else {
+        const b = bones[name] || animGetBone(name);
+        runtimeQ = new THREE.Quaternion();
+        if (b) b.getWorldQuaternion(runtimeQ); else runtimeQ.copy(restQ);
+      }
+      runtimeWorld[name] = runtimeQ;
+      const parentName = MocapSkeleton.parentOf[name];
+      const parentRuntimeQ = parentName ? (runtimeWorld[parentName] || restWorldQuat[parentName]) : restQ;
+      if (!parentRuntimeQ) return;
+      const local = parentRuntimeQ.clone().invert().multiply(runtimeQ);
+      if (localExtraTwist[name]) local.multiply(localExtraTwist[name]);
+      localQuats[name] = local;
+    });
+    return localQuats;
+  },
+
+  headNeckFromMatrix(m16) {
+    try {
+      const mat = new THREE.Matrix4().fromArray(m16);
+      const q = new THREE.Quaternion().setFromRotationMatrix(mat);
+      const e = new THREE.Euler().setFromQuaternion(q, 'YXZ');
+      const yaw = THREE.MathUtils.clamp(-e.y, -0.9, 0.9);
+      const pitch = THREE.MathUtils.clamp(e.x, -0.6, 0.6);
+      const roll = THREE.MathUtils.clamp(-e.z, -0.6, 0.6);
+      const head = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, roll));
+      const neck = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch * 0.35, yaw * 0.35, roll * 0.35));
+      return { head, neck };
+    } catch (e) { return null; }
+  },
+};
+
+const MocapIK = {
+  prevAnkleY: { left: null, right: null },
+  stillness: { left: 1, right: 1 },
+  update(P) {
+    ['left', 'right'].forEach(side => {
+      const ankle = P[side === 'left' ? 'lAnkle' : 'rAnkle'];
+      if (!ankle) { this.stillness[side] = 0; return; }
+      const prev = this.prevAnkleY[side];
+      const still = prev != null && Math.abs(ankle.y - prev) < 0.01;
+      const targetVal = still ? 1 : 0;
+      this.stillness[side] += (targetVal - this.stillness[side]) * 0.15;
+      this.prevAnkleY[side] = ankle.y;
+    });
+  },
+  extraDampFor(boneName) {
+    if (boneName.startsWith('left') && /LowerLeg|Foot|Toes/.test(boneName)) return this.stillness.left * 0.6;
+    if (boneName.startsWith('right') && /LowerLeg|Foot|Toes/.test(boneName)) return this.stillness.right * 0.6;
+    return 0;
+  },
+};
+
+// ── MocapSmoothing — one adaptive filter per bone, created lazily. ────────
+const MocapSmoothing = {
+  filters: {},
+  get(boneName) {
+    if (!this.filters[boneName]) this.filters[boneName] = new MocapOneEuro(1.0, 0.6, 1.0);
+    return this.filters[boneName];
+  },
+  reset() { this.filters = {}; },
+};
+
+// ── Live capture state (same globals the rest of the file's UI already
+// reads/writes, so no other section of the app needs to change). ─────────
+let mocapPoseLandmarker = null, mocapFaceLandmarker = null;
+let mocapModelsLoading = false;
+let mocapStream = null, mocapVideoEl = null, mocapCanvasEl = null;
+let mocapRafId = null;
+let mocapActive = false;
+let mocapFaceDriving = false;
+let mocapRecording = false;
+let mocapRecordStartedAt = 0;
+let mocapKeyframes = [];
+let mocapLastSampleAt = -1;
+let mocapStatusText = 'Camera off. Tap Start Camera to begin.';
+let mocapLastExprValues = {};
+let mocapLastFrameAt = -1;
+let mocapImportActive = false;
+let mocapImportUrl = null;
+const MOCAP_SAMPLE_FPS = 15;
+
+async function ensureMocapModelsLoaded() {
+  if (mocapPoseLandmarker && mocapFaceLandmarker) return true;
+  if (mocapModelsLoading) return false;
+  mocapModelsLoading = true;
+  setMocapStatus('Loading motion capture models — one moment…');
+  const createLandmarkers = async (fileset, delegate) => {
+    const pose = await vision.PoseLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate },
+      runningMode: 'VIDEO', numPoses: 1, outputSegmentationMasks: false,
+    });
+    const face = await vision.FaceLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate },
+      runningMode: 'VIDEO', numFaces: 1,
+      outputFaceBlendshapes: true, outputFacialTransformationMatrixes: true,
+    });
+    return { pose, face };
+  };
+  let vision;
+  try {
+    vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs');
+    const fileset = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm');
+    let created;
+    try {
+      created = await createLandmarkers(fileset, 'GPU');
+    } catch (gpuErr) {
+      // GPU delegate is fast but flaky on some browsers/devices, especially
+      // running two models at once — CPU is slower but far more reliable,
+      // and a silently-failed GPU init is a common cause of "she just
+      // doesn't move" with no visible error.
+      console.warn('mocap GPU delegate failed, retrying on CPU', gpuErr);
+      created = await createLandmarkers(fileset, 'CPU');
+    }
+    mocapPoseLandmarker = created.pose;
+    mocapFaceLandmarker = created.face;
+    MocapMath.init(THREE);
+    mocapModelsLoading = false;
+    return true;
+  } catch (e) {
+    console.error('mocap model load failed', e);
+    mocapModelsLoading = false;
+    setMocapStatus('⚠ Could not load motion capture models — check your connection and try again.');
+    return false;
+  }
+}
+
+function setMocapStatus(text, cls) {
+  mocapStatusText = text;
+  const el = document.getElementById('mocapStatusLine');
+  if (el) { el.textContent = text; el.className = 'mocap-status' + (cls ? ' ' + cls : ''); }
+}
+
+window.startMocapCapture = function () {
+  if (!currentVRM) addSystemMsg && addSystemMsg('Load an avatar first, then open Live Mocap to mirror your movement onto it.');
+  animEditorView = 'mocap';
+  animEditorDraft = null;
+  animSaveDialogOpen = false;
+  mocapKeyframes = [];
+  renderAnimEditor();
+};
+
+window.startMocapCamera = async function () {
+  if (!currentVRM) { addSystemMsg && addSystemMsg('Load an avatar first to mirror your movement onto it.'); return; }
+  const ok = await ensureMocapModelsLoaded();
+  if (!ok) return;
+  if (!mocapStream) {
+    try {
+      mocapStream = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false });
+    } catch (e) {
+      setMocapStatus('⚠ Camera permission was denied — allow camera access to use Live Mocap.');
+      return;
+    }
+  }
+  mocapVideoEl = document.getElementById('mocapVideo');
+  mocapCanvasEl = document.getElementById('mocapCanvas');
+  if (!mocapVideoEl) return;
+  mocapImportActive = false;
+  if (mocapImportUrl) { URL.revokeObjectURL(mocapImportUrl); mocapImportUrl = null; }
+  mocapVideoEl.onended = null;
+  mocapVideoEl.removeAttribute('src');
+  mocapVideoEl.srcObject = mocapStream;
+  try { await mocapVideoEl.play(); } catch (e) {}
+  MocapSkeleton.calibrate();
+  MocapSmoothing.reset();
+  mocapLastFrameAt = -1;
+  mocapNoDetectSince = -1;
+  mocapErrorReported = false;
+  mocapActive = true;
+  mocapFaceDriving = true;
+  setMocapStatus(MocapSkeleton.ready ? 'Mirroring live — move around, I\'m watching!' : '⚠ Could not read this avatar\'s skeleton — mirroring may look off.', MocapSkeleton.ready ? 'live' : '');
+  renderMocapControls();
+  mocapLoop();
+};
+
+function stopMocapCamera() {
+  mocapActive = false;
+  mocapFaceDriving = false;
+  mocapRecording = false;
+  mocapImportActive = false;
+  if (mocapRafId) cancelAnimationFrame(mocapRafId);
+  mocapRafId = null;
+  if (mocapStream) { mocapStream.getTracks().forEach(tr => tr.stop()); mocapStream = null; }
+  if (mocapVideoEl) { try { mocapVideoEl.onended = null; mocapVideoEl.pause(); mocapVideoEl.srcObject = null; mocapVideoEl.removeAttribute('src'); } catch (e) {} }
+  if (mocapImportUrl) { URL.revokeObjectURL(mocapImportUrl); mocapImportUrl = null; }
+  setMocapStatus('Camera off. Tap Start Camera to begin.');
+}
+window.stopMocapCameraUI = function () { stopMocapCamera(); renderMocapControls(); };
+
+window.exitMocapView = function () {
+  stopMocapCamera();
+  animEditorDraft = null;
+  animSaveDialogOpen = false;
+  animEditorView = 'library';
+  renderAnimEditor();
+};
+
+window.startMocapRecording = function () {
+  if (!mocapActive) { addSystemMsg && addSystemMsg('Start the camera first, then hit Record.'); return; }
+  mocapKeyframes = [];
+  mocapRecordStartedAt = performance.now() / 1000;
+  mocapLastSampleAt = -1;
+  mocapRecording = true;
+  renderMocapControls();
+};
+
+window.stopMocapRecording = function () {
+  mocapRecording = false;
+  if (mocapImportActive) { finishMocapVideoImport(); return; }
+  if (mocapKeyframes.length < 2) {
+    addSystemMsg && addSystemMsg('That clip was too short to save — hold the motion a little longer and try again.');
+    renderMocapControls();
+    return;
+  }
+  const duration = mocapKeyframes[mocapKeyframes.length - 1].t;
+  animEditorDraft = { id: animUid(), name: '', category: '', categoryLabel: '', type: 'mocap', keyframes: mocapKeyframes, duration };
+  animSaveDialogOpen = true;
+  renderMocapControls();
+  renderMocapSaveDialogWrap();
+};
+window.cancelMocapSaveDialog = function () {
+  animEditorDraft = null;
+  animSaveDialogOpen = false;
+  renderMocapSaveDialogWrap();
+  renderMocapControls();
+};
+
+// ── Import motion from an uploaded video file instead of the live camera.
+// Runs the exact same pose+face detection / retargeting / recording pipeline
+// as live capture — the only difference is the source frames come from a
+// played-back <video> element instead of a MediaStream. Animated GIFs aren't
+// supported here (browsers don't expose per-frame GIF decoding the way they
+// do real video codecs); ask for an MP4/WebM/MOV instead. ──────────────────
+window.startMocapVideoImport = async function (inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  inputEl.value = '';
+  if (!file) return;
+  if (!currentVRM) { addSystemMsg && addSystemMsg('Load an avatar first, then import a video to map its motion onto her.'); return; }
+  if (!/^video\//.test(file.type)) {
+    addSystemMsg && addSystemMsg('That doesn\'t look like a video file. Animated GIFs aren\'t supported for import — try an MP4 or WebM clip of the movement instead.');
+    return;
+  }
+  const ok = await ensureMocapModelsLoaded();
+  if (!ok) return;
+  stopMocapCamera();
+  mocapVideoEl = document.getElementById('mocapVideo');
+  mocapCanvasEl = document.getElementById('mocapCanvas');
+  if (!mocapVideoEl) return;
+  mocapImportUrl = URL.createObjectURL(file);
+  mocapVideoEl.srcObject = null;
+  mocapVideoEl.src = mocapImportUrl;
+  mocapVideoEl.muted = true;
+  mocapVideoEl.loop = false;
+  await new Promise(res => { mocapVideoEl.onloadedmetadata = res; });
+  MocapSkeleton.calibrate();
+  MocapSmoothing.reset();
+  mocapLastFrameAt = -1;
+  mocapNoDetectSince = -1;
+  mocapErrorReported = false;
+  mocapActive = true;
+  mocapImportActive = true;
+  mocapFaceDriving = true;
+  mocapKeyframes = [];
+  mocapRecordStartedAt = performance.now() / 1000;
+  mocapLastSampleAt = -1;
+  mocapRecording = true;
+  setMocapStatus('Reading motion from "' + file.name + '"…', 'live');
+  renderMocapControls();
+  mocapVideoEl.onended = () => finishMocapVideoImport();
+  try { await mocapVideoEl.play(); } catch (e) {
+    setMocapStatus('⚠ Could not play that video file — try an MP4 or WebM.');
+    mocapActive = false; mocapImportActive = false; mocapRecording = false;
+    renderMocapControls();
+    return;
+  }
+  mocapLoop();
+};
+
+function finishMocapVideoImport() {
+  mocapRecording = false;
+  mocapActive = false;
+  mocapImportActive = false;
+  if (mocapRafId) cancelAnimationFrame(mocapRafId);
+  mocapRafId = null;
+  if (mocapVideoEl) { try { mocapVideoEl.onended = null; mocapVideoEl.pause(); } catch (e) {} }
+  if (mocapImportUrl) { URL.revokeObjectURL(mocapImportUrl); mocapImportUrl = null; }
+  setMocapStatus('Camera off. Tap Start Camera to begin.');
+  if (mocapKeyframes.length < 2) {
+    addSystemMsg && addSystemMsg('Couldn\'t find a clear pose in that clip — try a video with the person\'s whole body in frame and good lighting.');
+    renderMocapControls();
+    return;
+  }
+  const duration = mocapKeyframes[mocapKeyframes.length - 1].t;
+  animEditorDraft = { id: animUid(), name: '', category: '', categoryLabel: '', type: 'mocap', keyframes: mocapKeyframes, duration };
+  animSaveDialogOpen = true;
+  renderMocapControls();
+  renderMocapSaveDialogWrap();
+}
+
+// ── Import from a still photo or an animated GIF. Routes by file type:
+//   • a plain photo -> one pose, read once and saved as a short held clip
+//   • an animated GIF -> sampled over a few seconds like a video, by letting
+//     the GIF play in a detached <img> and periodically snapshotting it to a
+//     canvas (browsers don't expose GIF frames directly, so this is the
+//     reliable way to read one without pulling in an extra decoding library).
+// Both reuse the exact same detection + retargeting pipeline as live/video
+// capture — only the source of frames differs. ────────────────────────────
+window.startMocapImageImport = async function (inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  inputEl.value = '';
+  if (!file) return;
+  if (!currentVRM) { addSystemMsg && addSystemMsg('Load an avatar first, then import a photo or GIF to map that pose/motion onto her.'); return; }
+  if (!/^image\//.test(file.type)) {
+    addSystemMsg && addSystemMsg('That doesn\'t look like an image file — try a JPG/PNG photo or an animated GIF.');
+    return;
+  }
+  const ok = await ensureMocapModelsLoaded();
+  if (!ok) return;
+  stopMocapCamera();
+  if (/gif/i.test(file.type)) runMocapGifImport(file);
+  else runMocapPhotoImport(file);
+};
+
+async function runMocapPhotoImport(file) {
+  const url = URL.createObjectURL(file);
+  setMocapStatus('Reading the pose from "' + file.name + '"…', 'live');
+  renderMocapControls();
+  const img = new Image();
+  try {
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+    MocapSkeleton.calibrate();
+    MocapSmoothing.reset();
+    let poseResult = null, faceResult = null;
+    const ts = performance.now();
+    try { poseResult = mocapPoseLandmarker.detectForVideo(img, ts); } catch (e) { console.error('photo pose detect failed', e); }
+    try { faceResult = mocapFaceLandmarker.detectForVideo(img, ts); } catch (e) { console.error('photo face detect failed', e); }
+    if (!poseResult || !poseResult.worldLandmarks || !poseResult.worldLandmarks[0]) {
+      addSystemMsg && addSystemMsg('Couldn\'t find a clear pose in that photo — try one with the person\'s whole body visible, facing the camera.');
+      setMocapStatus('Camera off. Tap Start Camera to begin.');
+      renderMocapControls();
+      return;
+    }
+    try { runMocapFrame(poseResult.worldLandmarks[0], 1 / 30); } catch (e) { console.error('photo retarget error', e); }
+    if (faceResult && faceResult.facialTransformationMatrixes && faceResult.facialTransformationMatrixes[0]) {
+      try { runMocapHeadFrame(faceResult.facialTransformationMatrixes[0].data, 1 / 30); } catch (e) {}
+    }
+    if (faceResult && faceResult.faceBlendshapes && faceResult.faceBlendshapes[0]) applyFaceBlendshapes(faceResult.faceBlendshapes[0].categories);
+    // A photo gives one pose, not a timeline — save it as a short held clip
+    // (two identical keyframes) so it plays back as a steady pose, the same
+    // way any other saved animation does.
+    const r3 = v => Math.round(v * 1000) / 1000;
+    const boneSnapshot = {};
+    BONE_NAMES.forEach(n => { const b = bones[n]; if (b) boneSnapshot[n] = [r3(b.rotation.x), r3(b.rotation.y), r3(b.rotation.z)]; });
+    const exprSnapshot = {};
+    Object.keys(mocapLastExprValues).forEach(k => { exprSnapshot[k] = r3(mocapLastExprValues[k]); });
+    const kf0 = { t: 0, bones: boneSnapshot, expr: exprSnapshot };
+    const kf1 = { t: 1.2, bones: boneSnapshot, expr: exprSnapshot };
+    animEditorDraft = { id: animUid(), name: '', category: '', categoryLabel: '', type: 'mocap', keyframes: [kf0, kf1], duration: 1.2 };
+    animSaveDialogOpen = true;
+    setMocapStatus('Camera off. Tap Start Camera to begin.');
+    renderMocapControls();
+    renderMocapSaveDialogWrap();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+const MOCAP_GIF_CAPTURE_SECONDS = 5;
+const MOCAP_GIF_SAMPLE_HZ = 10;
+function runMocapGifImport(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  // Some browsers pause an animated GIF's playback if it's fully detached
+  // from the document (or display:none) — keep it technically in the layout
+  // but visually off-screen so it keeps animating while we sample it.
+  img.style.cssText = 'position:fixed;left:-9999px;top:-9999px;pointer-events:none;';
+  img.onload = () => {
+    document.body.appendChild(img);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || 480;
+    canvas.height = img.naturalHeight || 360;
+    const ctx = canvas.getContext('2d');
+    MocapSkeleton.calibrate();
+    MocapSmoothing.reset();
+    mocapKeyframes = [];
+    mocapNoDetectSince = -1;
+    mocapErrorReported = false;
+    mocapActive = true;
+    mocapImportActive = true;
+    mocapFaceDriving = true;
+    mocapRecording = true;
+    mocapRecordStartedAt = performance.now() / 1000;
+    mocapLastSampleAt = -1;
+    setMocapStatus('Reading motion from "' + file.name + '"… (' + MOCAP_GIF_CAPTURE_SECONDS + 's sample)', 'live');
+    renderMocapControls();
+    let sampleCount = 0;
+    const totalSamples = MOCAP_GIF_CAPTURE_SECONDS * MOCAP_GIF_SAMPLE_HZ;
+    const cleanup = () => { try { document.body.removeChild(img); } catch (e) {} URL.revokeObjectURL(url); };
+    const finish = () => {
+      cleanup();
+      mocapRecording = false;
+      mocapActive = false;
+      mocapImportActive = false;
+      setMocapStatus('Camera off. Tap Start Camera to begin.');
+      if (mocapKeyframes.length < 2) {
+        addSystemMsg && addSystemMsg('Couldn\'t find a clear pose across that GIF — try one with the person\'s whole body visible throughout.');
+        renderMocapControls();
+        return;
+      }
+      const duration = mocapKeyframes[mocapKeyframes.length - 1].t;
+      animEditorDraft = { id: animUid(), name: '', category: '', categoryLabel: '', type: 'mocap', keyframes: mocapKeyframes, duration };
+      animSaveDialogOpen = true;
+      renderMocapControls();
+      renderMocapSaveDialogWrap();
+    };
+    const sampleOnce = () => {
+      if (!mocapActive || !mocapImportActive) { cleanup(); return; }
+      if (sampleCount >= totalSamples) { finish(); return; }
+      sampleCount++;
+      try {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const ts = performance.now();
+        let poseResult = null, faceResult = null;
+        try { poseResult = mocapPoseLandmarker.detectForVideo(canvas, ts); } catch (e) { console.error('gif pose detect failed', e); }
+        try { faceResult = mocapFaceLandmarker.detectForVideo(canvas, ts); } catch (e) { console.error('gif face detect failed', e); }
+        if (poseResult && poseResult.worldLandmarks && poseResult.worldLandmarks[0]) {
+          try { runMocapFrame(poseResult.worldLandmarks[0], 1 / MOCAP_GIF_SAMPLE_HZ); } catch (e) { console.error('gif retarget error', e); }
+        }
+        if (faceResult && faceResult.facialTransformationMatrixes && faceResult.facialTransformationMatrixes[0]) {
+          try { runMocapHeadFrame(faceResult.facialTransformationMatrixes[0].data, 1 / MOCAP_GIF_SAMPLE_HZ); } catch (e) {}
+        }
+        if (faceResult && faceResult.faceBlendshapes && faceResult.faceBlendshapes[0]) applyFaceBlendshapes(faceResult.faceBlendshapes[0].categories);
+        sampleMocapKeyframe();
+      } catch (e) {
+        console.error('gif sample failed', e);
+      }
+      setTimeout(sampleOnce, 1000 / MOCAP_GIF_SAMPLE_HZ);
+    };
+    sampleOnce();
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    addSystemMsg && addSystemMsg('Couldn\'t open that GIF file — try re-exporting it or use a photo/video instead.');
+  };
+  img.src = url;
+}
+
+function applyFaceBlendshapes(categories) {
+  const bs = {};
+  categories.forEach(c => { bs[c.categoryName] = c.score; });
+  const smile = Math.min(1, ((bs.mouthSmileLeft || 0) + (bs.mouthSmileRight || 0)) / 1.2);
+  const browDown = Math.min(1, ((bs.browDownLeft || 0) + (bs.browDownRight || 0)) / 1.2);
+  const browUp = Math.min(1, ((bs.browOuterUpLeft || 0) + (bs.browOuterUpRight || 0)) / 1.4);
+  const jawOpen = bs.jawOpen || 0;
+  const blink = Math.min(1, ((bs.eyeBlinkLeft || 0) + (bs.eyeBlinkRight || 0)) / 2);
+  mocapLastExprValues = { happy: smile, angry: browDown * 0.8, surprised: Math.min(1, jawOpen * 0.5 + browUp * 0.5), blink, aa: jawOpen };
+  Object.keys(mocapLastExprValues).forEach(k => setExpressionSafe(k, mocapLastExprValues[k]));
+}
+
+function sampleMocapKeyframe() {
+  const nowSec = performance.now() / 1000;
+  if (nowSec - mocapLastSampleAt < 1 / MOCAP_SAMPLE_FPS) return;
+  mocapLastSampleAt = nowSec;
+  const r3 = v => Math.round(v * 1000) / 1000; // 3 decimals is plenty of precision for a bone angle, cuts stored size a lot
+  const boneSnapshot = {};
+  BONE_NAMES.forEach(n => { const b = bones[n]; if (b) boneSnapshot[n] = [r3(b.rotation.x), r3(b.rotation.y), r3(b.rotation.z)]; });
+  const exprSnapshot = {};
+  Object.keys(mocapLastExprValues).forEach(k => { exprSnapshot[k] = r3(mocapLastExprValues[k]); });
+  mocapKeyframes.push({ t: r3(nowSec - mocapRecordStartedAt), bones: boneSnapshot, expr: exprSnapshot });
+  const timerEl = document.getElementById('mocapTimerLine');
+  if (timerEl) timerEl.textContent = '● REC ' + (nowSec - mocapRecordStartedAt).toFixed(1) + 's';
+}
+
+function drawMocapOverlay(poseResult) {
+  const canvas = mocapCanvasEl;
+  if (!canvas || !mocapVideoEl || !mocapVideoEl.videoWidth) return;
+  const w = mocapVideoEl.videoWidth, h = mocapVideoEl.videoHeight;
+  if (canvas.width !== w) { canvas.width = w; canvas.height = h; }
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+  if (!poseResult || !poseResult.landmarks || !poseResult.landmarks[0]) return;
+  ctx.fillStyle = '#00d4ff';
+  poseResult.landmarks[0].forEach(p => { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, 4, 0, Math.PI * 2); ctx.fill(); });
+}
+
+// ── The per-frame orchestration: PoseSource -> Retarget -> Constraints ->
+// Smoothing -> bone assignment. Each stage stays swappable on its own. ────
+function runMocapFrame(worldLandmarks, dtSec) {
+  if (!MocapSkeleton.ready) return;
+  const P = MocapRetarget.landmarksToTS(worldLandmarks);
+  const targets = MocapRetarget.computeSwingTargets(P);
+  MocapIK.update(P);
+  if (!targets) return;
+  const localQuats = MocapRetarget.resolveLocalQuats(targets.swingTargets, targets.localExtraTwist);
+  Object.keys(localQuats).forEach(name => {
+    const bone = bones[name];
+    if (!bone) return;
+    const clamped = MocapConstraints.apply(name, localQuats[name]);
+    let smoothed = MocapSmoothing.get(name).filter(clamped, dtSec);
+    const extraDamp = MocapIK.extraDampFor(name);
+    if (extraDamp > 0.01) smoothed = bone.quaternion.clone().slerp(smoothed, 1 - extraDamp);
+    bone.quaternion.copy(smoothed);
+  });
+}
+
+function runMocapHeadFrame(m16, dtSec) {
+  const targets = MocapRetarget.headNeckFromMatrix(m16);
+  if (!targets) return;
+  ['head', 'neck'].forEach(name => {
+    const bone = bones[name];
+    if (!bone || !targets[name]) return;
+    const clamped = MocapConstraints.apply(name, targets[name]);
+    bone.quaternion.copy(MocapSmoothing.get(name).filter(clamped, dtSec));
+  });
+}
+
+let mocapNoDetectSince = -1;
+let mocapErrorReported = false;
+
+function mocapLoop() {
+  if (!mocapActive) return;
+  mocapRafId = requestAnimationFrame(mocapLoop);
+  if (!mocapVideoEl || mocapVideoEl.readyState < 2 || !currentVRM) return;
+  const now = performance.now();
+  const dtSec = mocapLastFrameAt < 0 ? (1 / 30) : (now - mocapLastFrameAt) / 1000;
+  mocapLastFrameAt = now;
+  let poseResult = null, faceResult = null;
+  try { poseResult = mocapPoseLandmarker.detectForVideo(mocapVideoEl, now); } catch (e) { console.error('pose detect failed', e); }
+  try { faceResult = mocapFaceLandmarker.detectForVideo(mocapVideoEl, now); } catch (e) { console.error('face detect failed', e); }
+  const havePose = !!(poseResult && poseResult.worldLandmarks && poseResult.worldLandmarks[0]);
+  if (havePose) {
+    mocapNoDetectSince = -1;
+    try {
+      runMocapFrame(poseResult.worldLandmarks[0], dtSec);
+    } catch (e) {
+      // A retargeting bug should never just look like "she's not moving" with
+      // no explanation — surface it once so it's actually diagnosable.
+      console.error('mocap retarget error', e);
+      if (!mocapErrorReported) {
+        mocapErrorReported = true;
+        setMocapStatus('⚠ Something went wrong applying your movement — open the browser console for details, or try restarting the camera.', 'live');
+      }
+    }
+  } else if (mocapNoDetectSince < 0) {
+    mocapNoDetectSince = now;
+  } else if (now - mocapNoDetectSince > 2500 && !mocapErrorReported) {
+    setMocapStatus('👀 I can\'t find you clearly — step back so your head, shoulders and hips are all in frame, with decent light.', 'live');
+  }
+  if (faceResult && faceResult.facialTransformationMatrixes && faceResult.facialTransformationMatrixes[0]) {
+    try { runMocapHeadFrame(faceResult.facialTransformationMatrixes[0].data, dtSec); } catch (e) { console.error('mocap head retarget error', e); }
+  }
+  if (faceResult && faceResult.faceBlendshapes && faceResult.faceBlendshapes[0]) {
+    applyFaceBlendshapes(faceResult.faceBlendshapes[0].categories);
+  }
+  if (havePose && mocapNoDetectSince < 0 && !mocapErrorReported && mocapStatusText.indexOf('👀') === 0) {
+    setMocapStatus(MocapSkeleton.ready ? 'Mirroring live — move around, I\'m watching!' : mocapStatusText, 'live');
+  }
+  if (mocapRecording) sampleMocapKeyframe();
+  drawMocapOverlay(poseResult);
+}
+
+// ── Playback of a recorded mocap clip through the shared custom-animation
+// engine — quaternion-slerped between sampled keyframes so played-back clips
+// never flip or snap either, matching the live capture's rotation quality. ─
+function updateMocapPlayback(t) {
+  const rec = activeCustomAnim;
+  const kfs = rec.anim.keyframes;
+  const elapsed = t - rec.startedAt;
+  if (elapsed > rec.totalDuration + 0.15) { activeCustomAnim = null; return false; }
+  let i = 0;
+  while (i < kfs.length - 1 && kfs[i + 1].t < elapsed) i++;
+  const a = kfs[i], b = kfs[Math.min(i + 1, kfs.length - 1)];
+  const span = Math.max(0.0001, b.t - a.t);
+  const p = Math.max(0, Math.min(1, (elapsed - a.t) / span));
+  const boneNames = new Set([].concat(Object.keys(a.bones || {}), Object.keys(b.bones || {})));
+  const toXYZ = v => Array.isArray(v) ? { x: v[0], y: v[1], z: v[2] } : (v || null);
+  boneNames.forEach(name => {
+    const bone = bones[name] || animGetBone(name);
+    if (!bone) return;
+    const ba = toXYZ(a.bones && a.bones[name]) || { x: 0, y: 0, z: 0 };
+    const bb = toXYZ(b.bones && b.bones[name]) || ba;
+    const qa = new THREE.Quaternion().setFromEuler(new THREE.Euler(ba.x, ba.y, ba.z));
+    const qb = new THREE.Quaternion().setFromEuler(new THREE.Euler(bb.x, bb.y, bb.z));
+    bone.quaternion.copy(qa.slerp(qb, p));
+  });
+  const ea = a.expr || {}, eb = b.expr || {};
+  const exprNames = new Set([].concat(Object.keys(ea), Object.keys(eb)));
+  exprNames.forEach(name => {
+    const va = ea[name] || 0, vb = (eb[name] !== undefined ? eb[name] : va);
+    setExpressionSafe(name, va + (vb - va) * p);
+  });
+  return true;
+}
+
+// ── Editor state ────────────────────────────────────────────────────────
+let animEditorDraft = null;   // { id, name, category, categoryLabel, movements: [...] } OR mocap: { ..., type:'mocap', keyframes, duration }
+let animEditorView = 'library'; // 'library' | 'editor' | 'mocap'
+let animSaveDialogOpen = false;
+
+function newMovement() {
+  return { id: animUid(), bone: '', rotationAngle: 20, swingAngle: 0, direction: 'up', duration: 1, speed: 1, startDelay: 0, loopCount: 1, smoothing: 0.5 };
+}
+
+window.toggleAnimationEditor = function () {
+  const panel = document.getElementById('animationEditorPanel');
+  if (!panel) return;
+  const opening = !panel.classList.contains('open');
+  if (opening) {
+    if (!currentVRM) { addSystemMsg && addSystemMsg('Load an avatar first, then open the Animation Editor to build custom animations for it.'); }
+    loadAnimLibrary();
+    animEditorView = 'library';
+    animEditorDraft = null;
+    renderAnimEditor();
+    panel.classList.add('open');
+  } else {
+    panel.classList.remove('open');
+    stopMocapCamera();
+    stopCustomAnimation();
+  }
+};
+window.closeAnimationEditor = function () {
+  const panel = document.getElementById('animationEditorPanel');
+  if (panel) panel.classList.remove('open');
+  stopMocapCamera();
+  stopCustomAnimation();
+};
+
+window.startNewAnimation = function () {
+  animEditorDraft = { id: animUid(), name: '', category: '', categoryLabel: '', movements: [newMovement()] };
+  animEditorView = 'editor';
+  animSaveDialogOpen = false;
+  renderAnimEditor();
+};
+window.editAnimationEntry = function (id) {
+  const found = customAnimLibrary.find(a => a.id === id);
+  if (!found) return;
+  if (found.type === 'mocap') {
+    addSystemMsg && addSystemMsg('Mocap clips don\'t have a keyframe editor yet — re-record it from Live Mocap if you want to change it. Previewing it now.');
+    if (currentVRM) startCustomAnimation(found);
+    return;
+  }
+  animEditorDraft = JSON.parse(JSON.stringify(found));
+  animEditorView = 'editor';
+  animSaveDialogOpen = false;
+  renderAnimEditor();
+};
+window.cancelAnimEditor = function () {
+  stopCustomAnimation();
+  stopMocapCamera();
+  animEditorDraft = null;
+  animEditorView = 'library';
+  animSaveDialogOpen = false;
+  renderAnimEditor();
+};
+window.addMovementStep = function () {
+  if (!animEditorDraft) return;
+  animEditorDraft.movements.push(newMovement());
+  renderAnimEditor();
+};
+window.removeMovementStep = function (mvId) {
+  if (!animEditorDraft) return;
+  if (animEditorDraft.movements.length <= 1) { addSystemMsg && addSystemMsg('An animation needs at least one movement — edit it instead of removing the last step.'); return; }
+  animEditorDraft.movements = animEditorDraft.movements.filter(m => m.id !== mvId);
+  renderAnimEditor();
+};
+window.setMovementBone = function (mvId, boneName) {
+  if (!animEditorDraft) return;
+  const mv = animEditorDraft.movements.find(m => m.id === mvId);
+  if (mv) mv.bone = boneName;
+  renderAnimEditor();
+};
+window.updateMovementField = function (mvId, field, value) {
+  if (!animEditorDraft) return;
+  const mv = animEditorDraft.movements.find(m => m.id === mvId);
+  if (!mv) return;
+  mv[field] = (field === 'direction') ? value : value;
+  // don't re-render on every keystroke of numeric fields (loses focus) —
+  // only bone/direction changes need a structural re-render.
+};
+window.setAnimName = function (val) { if (animEditorDraft) animEditorDraft.name = val; };
+
+window.previewAnimation = function () {
+  if (!animEditorDraft) return;
+  if (!currentVRM) { addSystemMsg && addSystemMsg('Load an avatar first to preview animations.'); return; }
+  const usable = animEditorDraft.movements.filter(m => m.bone);
+  if (!usable.length) { addSystemMsg && addSystemMsg('Pick a bone for at least one movement before previewing.'); return; }
+  startCustomAnimation({ movements: usable });
+};
+
+window.openAnimSaveDialog = function () {
+  if (!animEditorDraft) return;
+  if (!animEditorDraft.movements.some(m => m.bone)) { addSystemMsg && addSystemMsg('Pick a bone for at least one movement before saving.'); return; }
+  animSaveDialogOpen = true;
+  renderAnimEditor();
+};
+window.cancelAnimSaveDialog = function () { animSaveDialogOpen = false; renderAnimEditor(); };
+window.onAnimCategorySelectChange = function (val) {
+  const wrap = document.getElementById('animCustomCatWrap');
+  if (wrap) wrap.style.display = (val === '__custom__') ? 'block' : 'none';
+};
+window.confirmSaveAnimation = function () {
+  if (!animEditorDraft) return;
+  const nameEl = document.getElementById('animNameInput');
+  const catEl = document.getElementById('animCategorySelect');
+  const customEl = document.getElementById('animCustomCatInput');
+  const name = (nameEl ? nameEl.value : animEditorDraft.name || '').trim() || 'Untitled Animation';
+  let category = catEl ? catEl.value : '';
+  let categoryLabel = '';
+  if (!category) { addSystemMsg && addSystemMsg('Choose what this animation is for before saving.'); return; }
+  if (category === '__custom__') {
+    const custom = ((customEl ? customEl.value : '') || '').trim();
+    if (!custom) { addSystemMsg && addSystemMsg('Type a name for your custom category.'); return; }
+    categoryLabel = custom;
+    category = 'custom:' + custom.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  } else {
+    categoryLabel = (animCategoryMeta(category) || {}).label || category;
+  }
+  let anim;
+  if (animEditorDraft.type === 'mocap') {
+    anim = {
+      id: animEditorDraft.id || animUid(),
+      name, category, categoryLabel, type: 'mocap',
+      keyframes: animEditorDraft.keyframes, duration: animEditorDraft.duration,
+    };
+  } else {
+    // Snapshot current field values (numeric inputs use data-mv/data-field, read live)
+    document.querySelectorAll('#animEditorBody [data-mv][data-field]').forEach(el => {
+      const mv = animEditorDraft.movements.find(m => m.id === el.getAttribute('data-mv'));
+      if (!mv) return;
+      const field = el.getAttribute('data-field');
+      mv[field] = el.type === 'number' ? Number(el.value) : el.value;
+    });
+    anim = {
+      id: animEditorDraft.id || animUid(),
+      name, category, categoryLabel,
+      movements: animEditorDraft.movements.filter(m => m.bone),
+    };
+  }
+  const idx = customAnimLibrary.findIndex(a => a.id === anim.id);
+  const previous = idx >= 0 ? customAnimLibrary[idx] : null;
+  if (idx >= 0) customAnimLibrary[idx] = anim; else customAnimLibrary.push(anim);
+  const ok = saveAnimLibrary();
+  if (!ok) {
+    // Roll back the in-memory change too, so the UI doesn't claim it's saved
+    // when it isn't — this is what silently "loses" clips on next reload.
+    if (previous) customAnimLibrary[idx] = previous; else customAnimLibrary.pop();
+    addSystemMsg && addSystemMsg('⚠ Couldn\'t save "' + name + '" — your browser\'s storage is full. Delete an older clip (mocap recordings are the biggest) and try saving again.');
+    return;
+  }
+  addSystemMsg && addSystemMsg('Saved "' + name + '" to the ' + categoryLabel + ' animation library. I\'ll use it automatically when that comes up, and it\'ll stay there until you delete it.');
+  animEditorDraft = null;
+  animSaveDialogOpen = false;
+  animEditorView = 'library';
+  stopMocapCamera();
+  renderAnimEditor();
+};
+window.deleteAnimationEntry = function (id) {
+  const anim = customAnimLibrary.find(a => a.id === id);
+  if (!anim) return;
+  if (!confirm('Delete "' + anim.name + '"? This can\'t be undone.')) return;
+  customAnimLibrary = customAnimLibrary.filter(a => a.id !== id);
+  saveAnimLibrary();
+  renderAnimEditor();
+};
+window.playAnimationEntry = function (id) {
+  const anim = customAnimLibrary.find(a => a.id === id);
+  if (!anim) return;
+  if (!currentVRM) { addSystemMsg && addSystemMsg('Load an avatar first to play animations.'); return; }
+  startCustomAnimation(anim);
+};
+
+function escapeAnimHtml(s) { return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function renderAnimEditor() {
+  const body = document.getElementById('animEditorBody');
+  if (!body) return;
+  if (animEditorView === 'library') {
+    body.innerHTML = renderAnimLibraryHtml();
+  } else if (animEditorView === 'mocap') {
+    body.innerHTML = renderMocapViewHtml();
+    renderMocapControls();
+    renderMocapSaveDialogWrap();
+  } else {
+    body.innerHTML = renderAnimEditorFormHtml();
+  }
+}
+
+// ── Live Mocap view rendering. The video/canvas elements are only ever
+// created once per view-entry (renderAnimEditor above) — subsequent state
+// changes (start/stop camera, start/stop recording) update just the
+// #mocapControls / #mocapSaveDialogWrap sub-containers via direct DOM
+// writes instead of re-rendering the whole view, so the live camera feed
+// is never torn down mid-session. ─────────────────────────────────────────
+function renderMocapViewHtml() {
+  return '<div class="anim-section-title">🎥 LIVE MOCAP — MIRROR &amp; RECORD</div>'
+    + '<div class="mocap-video-wrap"><video id="mocapVideo" autoplay muted playsinline></video><canvas id="mocapCanvas"></canvas></div>'
+    + '<div class="mocap-status" id="mocapStatusLine">' + escapeAnimHtml(mocapStatusText) + '</div>'
+    + '<div id="mocapControls"></div>'
+    + '<div id="mocapSaveDialogWrap"></div>'
+    + '<div class="anim-empty-hint">Stand back so your head, arms and legs are all in frame. This mirrors your body and face onto the avatar live — hit Record to capture a clip, or use Import Video / Import Photo-GIF to pull motion or a pose from an existing file instead of the camera. Either way, save the clip under a category and it stays in the library permanently until you delete it. (A photo becomes one held pose; a GIF is sampled over a few seconds like a short video. Individual finger/toe tracking isn\'t supported yet — full-body limb motion, spine/torso twist, head turn/tilt, and facial expression all are.)</div>'
+    + '<div class="anim-editor-actions"><button class="btn-secondary" style="border-color:var(--red);color:var(--red);flex:1;" onclick="window.exitMocapView()">✕ BACK TO LIBRARY</button></div>';
+}
+function renderMocapControls() {
+  const el = document.getElementById('mocapControls');
+  if (!el) return;
+  if (!mocapActive) {
+    el.innerHTML = '<div class="mocap-btn-row">'
+      + '<button type="button" class="btn-primary" onclick="window.startMocapCamera()">📷 START CAMERA</button>'
+      + '<label class="btn-secondary" for="mocapVideoImportInput" style="cursor:pointer;text-align:center;">📼 IMPORT VIDEO</label>'
+      + '</div>'
+      + '<div class="mocap-btn-row" style="margin-top:6px;">'
+      + '<label class="btn-secondary" for="mocapImageImportInput" style="cursor:pointer;text-align:center;flex:1;">🖼 IMPORT PHOTO / GIF</label>'
+      + '</div>'
+      + '<input type="file" id="mocapVideoImportInput" accept="video/*" style="display:none;" onchange="window.startMocapVideoImport(this)">'
+      + '<input type="file" id="mocapImageImportInput" accept="image/*" style="display:none;" onchange="window.startMocapImageImport(this)">';
+  } else if (mocapRecording) {
+    el.innerHTML = '<div class="mocap-timer" id="mocapTimerLine">● REC 0.0s</div>'
+      + '<div class="mocap-btn-row"><button type="button" class="btn-primary" style="border-color:var(--red);color:var(--red);" onclick="window.stopMocapRecording()">⏹ ' + (mocapImportActive ? 'STOP EARLY & SAVE' : 'STOP & SAVE') + '</button></div>';
+  } else {
+    el.innerHTML = '<div class="mocap-btn-row"><button type="button" class="btn-primary" onclick="window.startMocapRecording()">⏺ RECORD</button>'
+      + '<button type="button" class="btn-secondary" onclick="window.stopMocapCameraUI()">⏹ STOP CAMERA</button></div>';
+  }
+}
+function renderMocapSaveDialogWrap() {
+  const el = document.getElementById('mocapSaveDialogWrap');
+  if (!el) return;
+  el.innerHTML = (animEditorDraft && animEditorDraft.type === 'mocap' && animSaveDialogOpen) ? renderMocapSaveDialogHtml() : '';
+}
+function renderMocapSaveDialogHtml() {
+  let catOptions = '<option value="">— select a category —</option>';
+  ANIM_CATEGORIES.forEach(c => { catOptions += '<option value="' + c.key + '">' + c.label + '</option>'; });
+  catOptions += '<option value="__custom__">＋ Custom category…</option>';
+  return '<div class="anim-save-dialog">'
+    + '<div class="anim-field-row"><label>Clip Name</label><input type="text" id="animNameInput" placeholder="e.g. Big Wave Hello"></div>'
+    + '<div class="anim-field-row"><label>What action or situation is this for?</label>'
+    + '<select id="animCategorySelect" onchange="window.onAnimCategorySelectChange(this.value)">' + catOptions + '</select></div>'
+    + '<div class="anim-field-row" id="animCustomCatWrap" style="display:none;"><label>Custom category name</label><input type="text" id="animCustomCatInput" placeholder="e.g. Cheering, Yoga Pose"></div>'
+    + '<div class="anim-editor-actions">'
+    + '<button class="btn-primary" style="flex:1;" onclick="window.confirmSaveAnimation()">✓ CONFIRM SAVE</button>'
+    + '<button class="btn-secondary" onclick="window.cancelMocapSaveDialog()">DISCARD CLIP</button>'
+    + '</div></div>';
+}
+
+function renderAnimLibraryHtml() {
+  let html = '<button type="button" class="btn-primary" style="width:100%;margin-bottom:8px;" onclick="window.startMocapCapture()">🎥 CAPTURE FROM WEBCAM</button>';
+  html += '<button type="button" class="btn-secondary" style="width:100%;margin-bottom:14px;" onclick="window.startNewAnimation()">✎ BUILD MANUALLY</button>';
+  if (!customAnimLibrary.length) {
+    html += '<div class="anim-empty-hint">No custom animations yet. Tap <b>Capture From Webcam</b> to mirror and record your own movement onto the avatar, or <b>Build Manually</b> to dial in bone rotations by hand. Either way, save it under a category (like Greeting or Thinking) and I\'ll play it automatically whenever that moment comes up in conversation.</div>';
+    return html;
+  }
+  const grouped = {};
+  customAnimLibrary.forEach(a => { (grouped[a.categoryLabel || a.category] = grouped[a.categoryLabel || a.category] || []).push(a); });
+  Object.keys(grouped).sort().forEach(label => {
+    html += '<div class="anim-cat-group"><div class="anim-cat-label">' + escapeAnimHtml(label) + '</div>';
+    grouped[label].forEach(a => {
+      const meta = a.type === 'mocap' ? ('🎥 mocap · ' + (a.duration ? a.duration.toFixed(1) + 's' : '')) : (a.movements.length + ' move' + (a.movements.length === 1 ? '' : 's'));
+      html += '<div class="anim-card"><span class="anim-card-name">' + escapeAnimHtml(a.name) + ' <span style="color:var(--text-dim);font-size:0.6rem;">(' + meta + ')</span></span>'
+        + '<span class="anim-card-btns">'
+        + '<button class="anim-mini-btn" onclick="window.playAnimationEntry(\'' + a.id + '\')" title="Preview">▶</button>'
+        + '<button class="anim-mini-btn" onclick="window.editAnimationEntry(\'' + a.id + '\')" title="Edit">✎</button>'
+        + '<button class="anim-mini-btn danger" onclick="window.deleteAnimationEntry(\'' + a.id + '\')" title="Delete">🗑</button>'
+        + '</span></div>';
+    });
+    html += '</div>';
+  });
+  return html;
+}
+
+const ANIM_DIRECTIONS = [
+  { v: 'up', l: 'Up' }, { v: 'down', l: 'Down' },
+  { v: 'left', l: 'Left' }, { v: 'right', l: 'Right' },
+  { v: 'twistLeft', l: 'Twist Left' }, { v: 'twistRight', l: 'Twist Right' },
+];
+
+function renderMovementCardHtml(mv, index) {
+  let boneOptions = '<option value="">— choose a bone —</option>';
+  ANIM_BONE_GROUPS.forEach(g => {
+    boneOptions += '<optgroup label="' + escapeAnimHtml(g.label) + '">';
+    g.bones.forEach(b => { boneOptions += '<option value="' + b.v + '"' + (mv.bone === b.v ? ' selected' : '') + '>' + escapeAnimHtml(b.l) + '</option>'; });
+    boneOptions += '</optgroup>';
+  });
+  let dirOptions = ANIM_DIRECTIONS.map(d => '<option value="' + d.v + '"' + (mv.direction === d.v ? ' selected' : '') + '>' + d.l + '</option>').join('');
+
+  let settings = '';
+  if (mv.bone) {
+    settings = '<div class="anim-field-grid">'
+      + numField(mv, 'rotationAngle', 'Rotation Angle (°)')
+      + numField(mv, 'swingAngle', 'Swing Angle (°)')
+      + selField(mv, 'direction', 'Direction', dirOptions)
+      + numField(mv, 'duration', 'Duration (sec)', 0.1, 30, 0.1)
+      + numField(mv, 'speed', 'Movement Speed (×)', 0.1, 5, 0.1)
+      + numField(mv, 'startDelay', 'Start Delay (sec)', 0, 30, 0.1)
+      + numField(mv, 'loopCount', 'Loop Count', 1, 50, 1)
+      + numField(mv, 'smoothing', 'Smoothing (0–1)', 0, 1, 0.05)
+      + '</div>';
+  }
+  return '<div class="anim-movement-card">'
+    + '<div class="anim-movement-head"><span class="anim-movement-head-title">' + (index === 0 ? 'FIRST MOVEMENT' : 'MOVEMENT ' + (index + 1)) + (mv.bone ? ' — ' + escapeAnimHtml(animBoneLabel(mv.bone)) : '') + '</span>'
+    + '<button class="anim-remove-step" onclick="window.removeMovementStep(\'' + mv.id + '\')">✕ REMOVE</button></div>'
+    + '<div class="anim-movement-body">'
+    + '<div class="anim-field-row"><label>Body Bone</label><select data-mv="' + mv.id + '" data-field="bone" onchange="window.setMovementBone(\'' + mv.id + '\', this.value)">' + boneOptions + '</select></div>'
+    + settings
+    + '</div></div>';
+}
+function numField(mv, field, label, min, max, step) {
+  const val = mv[field] === undefined ? '' : mv[field];
+  const attrs = (min !== undefined ? ' min="' + min + '"' : '') + (max !== undefined ? ' max="' + max + '"' : '') + (step !== undefined ? ' step="' + step + '"' : ' step="any"');
+  return '<div class="anim-field-row"><label>' + label + '</label><input type="number" data-mv="' + mv.id + '" data-field="' + field + '" value="' + val + '"' + attrs + '></div>';
+}
+function selField(mv, field, label, optionsHtml) {
+  return '<div class="anim-field-row"><label>' + label + '</label><select data-mv="' + mv.id + '" data-field="' + field + '" onchange="window.updateMovementField(\'' + mv.id + '\',\'' + field + '\',this.value)">' + optionsHtml + '</select></div>';
+}
+
+function renderAnimEditorFormHtml() {
+  const d = animEditorDraft;
+  let html = '<div class="anim-field-row"><label>Animation Name</label><input type="text" id="animNameInput" value="' + escapeAnimHtml(d.name) + '" oninput="window.setAnimName(this.value)" placeholder="e.g. Big Friendly Wave"></div>';
+  html += '<div class="anim-section-title">MOVEMENTS</div>';
+  d.movements.forEach((mv, i) => { html += renderMovementCardHtml(mv, i); });
+  html += '<button type="button" class="anim-add-movement-btn" onclick="window.addMovementStep()">+ MOVEMENT</button>';
+
+  if (animSaveDialogOpen) {
+    let catOptions = '<option value="">— select a category —</option>';
+    ANIM_CATEGORIES.forEach(c => { catOptions += '<option value="' + c.key + '"' + (d.category === c.key ? ' selected' : '') + '>' + c.label + '</option>'; });
+    catOptions += '<option value="__custom__">＋ Custom category…</option>';
+    html += '<div class="anim-save-dialog">'
+      + '<div class="anim-field-row"><label>What action or situation is this animation for?</label>'
+      + '<select id="animCategorySelect" onchange="window.onAnimCategorySelectChange(this.value)">' + catOptions + '</select></div>'
+      + '<div class="anim-field-row" id="animCustomCatWrap" style="display:none;"><label>Custom category name</label><input type="text" id="animCustomCatInput" placeholder="e.g. Cheering, Yoga Pose"></div>'
+      + '<div class="anim-editor-actions">'
+      + '<button class="btn-primary" style="flex:1;" onclick="window.confirmSaveAnimation()">✓ CONFIRM SAVE</button>'
+      + '<button class="btn-secondary" onclick="window.cancelAnimSaveDialog()">CANCEL</button>'
+      + '</div></div>';
+  } else {
+    html += '<div class="anim-editor-actions">'
+      + '<button class="btn-secondary" style="flex:1;" onclick="window.previewAnimation()">▶ PREVIEW</button>'
+      + '<button class="btn-primary" style="flex:1;" onclick="window.openAnimSaveDialog()">💾 SAVE ANIMATION</button>'
+      + '<button class="btn-secondary" style="border-color:var(--red);color:var(--red);" onclick="window.cancelAnimEditor()">✕ CANCEL</button>'
+      + '</div>';
+  }
+  return html;
+}
+
+// Read live numeric-field values back into the draft before any structural
+// re-render is triggered by bone/direction dropdown changes.
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (!el || !el.matches) return;
+  if (el.matches('#animEditorBody input[data-mv][data-field]') && animEditorDraft) {
+    const mv = animEditorDraft.movements.find(m => m.id === el.getAttribute('data-mv'));
+    if (mv) mv[el.getAttribute('data-field')] = el.type === 'number' ? Number(el.value) : el.value;
+  }
+});
+
+loadAnimLibrary();
+
 
 </script>
 
