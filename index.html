@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -670,6 +671,7 @@
   .mini-viewer-btn.danger:hover { border-color: var(--red); color: var(--red); }
   .mini-viewer-body {
     flex: 1;
+    min-height: 0;
     overflow: auto;
     padding: 10px 12px;
     font-family: 'Share Tech Mono', monospace;
@@ -1258,7 +1260,7 @@
     </div>
 
     <!-- TEXT-MODE controls (hidden in image mode) -->
-    <div id="fsTextControls">
+    <div id="fsTextControls" style="flex:1;min-height:0;overflow:hidden;">
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;flex-shrink:0">
         <select class="form-input" id="fileCreatorType" style="flex:1;min-width:130px">
           <option value="txt">Plain Text (.txt)</option>
@@ -1308,7 +1310,7 @@
         <button class="fs-tab active" id="fsTabEdit" onclick="fsSwitchTab('edit')">✎ EDIT</button>
         <button class="fs-tab" id="fsTabPreview" onclick="fsSwitchTab('preview')">👁 PREVIEW</button>
       </div>
-      <div id="fsEditView" style="flex:1;min-height:260px;display:flex;flex-direction:column;">
+      <div id="fsEditView" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;">
         <div class="fs-toolbar" id="fsToolbar">
           <button type="button" class="fs-tool-btn" title="Bold (Ctrl+B)" onmousedown="event.preventDefault()" onclick="fsExec('bold')"><b>B</b></button>
           <button type="button" class="fs-tool-btn" title="Italic (Ctrl+I)" onmousedown="event.preventDefault()" onclick="fsExec('italic')"><i>I</i></button>
@@ -1333,9 +1335,9 @@
           <div class="fs-tool-sep"></div>
           <button type="button" class="fs-tool-btn" title="Clear formatting" onmousedown="event.preventDefault()" onclick="fsExec('removeFormat')">Clear</button>
         </div>
-        <div id="fileCreatorContent" contenteditable="true" data-placeholder="Type content here, import a file, or use AI Generate above..." style="flex:1;min-height:220px;background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:12px;outline:none;overflow-y:auto;line-height:1.7;border-radius:0 0 4px 4px;margin-bottom:12px" oninput="fsMarkDirty()"></div>
+        <div id="fileCreatorContent" contenteditable="true" data-placeholder="Type content here, import a file, or use AI Generate above..." style="flex:1;min-height:0;background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:12px;outline:none;overflow-y:auto;line-height:1.7;border-radius:0 0 4px 4px;margin-bottom:12px" oninput="fsMarkDirty()" onpaste="fsHandlePaste(event)"></div>
       </div>
-      <div id="fsPreviewView" style="flex:1;min-height:260px;margin-bottom:12px;display:none;background:#fff;border:1px solid var(--border);border-radius:4px;overflow:auto;">
+      <div id="fsPreviewView" style="flex:1;min-height:0;margin-bottom:12px;display:none;background:#fff;border:1px solid var(--border);border-radius:4px;overflow:auto;">
         <iframe id="fsPreviewFrame" style="width:100%;height:100%;min-height:260px;border:none;display:none;background:#fff;"></iframe>
         <pre id="fsPreviewPre" style="display:none;margin:0;padding:14px;white-space:pre-wrap;word-break:break-word;color:#111;background:#fff;font-family:'Share Tech Mono',monospace;font-size:0.72rem;line-height:1.6;"></pre>
         <div id="fsPreviewEmpty" style="padding:30px;text-align:center;color:#666;font-family:'Share Tech Mono',monospace;font-size:0.68rem;">Nothing to preview yet</div>
@@ -4296,12 +4298,19 @@ async function callGroq(message, frames=null, retry=0, silent=false, opts=null) 
     });
   } else { content = fsCapMessageTokens(message); }
 
+  // Standalone tasks (like document/file generation) can pass a short custom system
+  // prompt and skip conversation history entirely — they don't need ANNA's full
+  // assistant persona (~2000 tokens) or chat memory, and skipping both frees up the
+  // token budget for what actually matters here: the generated content itself.
+  const systemPromptText = (opts && opts.systemPrompt) || FRIDAY_SYS(!!frames?.length);
+  const skipHistory = !!(opts && opts.skipHistory);
+
   // Budget: keep total input comfortably under the tightest known per-request limit
-  // (Groq's 8B-instant tier here caps at 6000 TPM) after accounting for the system
-  // prompt (~1300 tokens) and the reply's own max_tokens — trim harder on retry.
-  const systemTokens = 1300;
-  const historyBudget = Math.max(300, 5200 - systemTokens - fsRoughTokenCount(content) - (opts?.maxTokens || 500) - (retry >= 2 ? 4200 : 0));
-  const history = [...fsBuildHistoryWithinBudget(conversationHistory, content, historyBudget), {role:'user',content}];
+  // (Groq's 8B-instant tier here caps at 6000 TPM) after accounting for the actual
+  // system prompt size and the reply's own max_tokens — trim harder on retry.
+  const systemTokens = fsRoughTokenCount(systemPromptText);
+  const historyBudget = skipHistory ? 0 : Math.max(300, 5200 - systemTokens - fsRoughTokenCount(content) - (opts?.maxTokens || 500) - (retry >= 2 ? 4200 : 0));
+  const history = skipHistory ? [{role:'user',content}] : [...fsBuildHistoryWithinBudget(conversationHistory, content, historyBudget), {role:'user',content}];
   // ★ FIX: the fast 'llama-3.1-8b-instant' model frequently ignores language
   // instructions and replies in English (or broken transliteration) for
   // non-English languages, especially Indic ones like Tamil. The larger
@@ -4326,7 +4335,7 @@ async function callGroq(message, frames=null, retry=0, silent=false, opts=null) 
     const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
       method:'POST',
       headers:{'Authorization':'Bearer '+config.groqKey,'Content-Type':'application/json'},
-      body: JSON.stringify({model, messages:[{role:'system',content:FRIDAY_SYS(!!frames?.length)},...history], max_tokens:maxTokens, temperature:0.75, ...(model===VISION_MODEL ? {reasoning_effort:'none'} : {})})
+      body: JSON.stringify({model, messages:[{role:'system',content:systemPromptText},...history], max_tokens:maxTokens, temperature:0.75, ...(model===VISION_MODEL ? {reasoning_effort:'none'} : {})})
     }, callTimeoutMs, trackGlobal);
 
     if (!res.ok) {
@@ -4357,7 +4366,10 @@ async function callGroq(message, frames=null, retry=0, silent=false, opts=null) 
       // with history trimmed hard and the message itself capped, instead of failing.
       const looksTooLarge = /request too large|reduce your message size|too many tokens|context.?length/i.test(errMsg);
       if (looksTooLarge && retry < 2) {
-        return await callGroq(message, frames, retry + 2, silent, opts);
+        // Trimming history alone doesn't help calls that already skip history (or have
+        // little of it) — also shrink the requested output size so the retry can fit.
+        const shrunkOpts = { ...(opts || {}), maxTokens: Math.max(400, Math.floor((maxTokens || 500) * 0.55)) };
+        return await callGroq(message, frames, retry + 2, silent, shrunkOpts);
       }
       throw new Error(errMsg);
     }
@@ -4739,8 +4751,15 @@ async function sendMessage() {
     // ─── REMINDER / NOTIFICATION ───
     // Catches many natural ways of asking for the same thing: "remind me...",
     // "set a reminder...", "notify me...", "give/pull/send me a notification...",
-    // "alert me...", "do a reminder...".
-    if (/remind\s+me|set\s+(?:a\s+|an?\s+)?reminder|do\s+(?:a\s+|an?\s+)?reminder|notify\s+me|(?:give|pull|send|get|shoot)\s+me\s+a\s+notification|alert\s+me/i.test(lo)) {
+    // "give/pull/send/get/shoot me a reminder/message/ping/text...", "check on
+    // me...", "alert me...", "do a reminder...".
+    // ★ FIX: previously "give me a reminder on 6:42pm" (a very natural phrasing —
+    // "give" instead of "set", "on" instead of "at") didn't match anything here,
+    // so it silently fell through to the AI chat model, which just *talked about*
+    // remembering instead of actually scheduling a real timer — so nothing ever
+    // fired later. Now it's recognized and handleReminder() registers a real
+    // schedule entry that checkReminders() will fire on time.
+    if (/remind\s+me|set\s+(?:a\s+|an?\s+)?reminder|do\s+(?:a\s+|an?\s+)?reminder|notify\s+me|(?:give|pull|send|get|shoot)\s+me\s+a\s+(?:notification|reminder|message|ping|text|alert)|check(?:\s+in)?\s+on\s+me|alert\s+me/i.test(lo)) {
       handleReminder(text);
       // Still pass to AI for a natural confirmation
     }
@@ -5964,7 +5983,12 @@ function parseRelativeDuration(text) {
 // Detects "at <time>" with optional "tomorrow"/"tonight"/"this evening" context,
 // and rolls over to the next day automatically if the time already passed today.
 function parseAbsoluteReminder(text) {
-  const m = text.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  // ★ FIX: people don't always say "at 6:42pm" — "on 6.42 pm today", "for 6:42pm",
+  // "by 6.42pm" are all common too, and a period is as common as a colon as the
+  // hour/minute separator. Previously only the strict "at HH:MM" form matched,
+  // so anything phrased differently (like "give me a reminder ON 6.42 pm") never
+  // got a dueAt timestamp and therefore never actually fired later.
+  const m = text.match(/\b(?:at|on|for|by)\s+(\d{1,2})[:.]?(\d{2})?\s*(am|pm)?/i);
   if (!m) return null;
   let h = parseInt(m[1], 10);
   const mn = m[2] ? parseInt(m[2], 10) : 0;
@@ -6120,10 +6144,11 @@ function handleReminder(text) {
     .replace(/set\s+(?:a\s+|an?\s+)?reminder\s*(?:to\s+|for\s+|about\s+)?/i, '')
     .replace(/do\s+(?:a\s+|an?\s+)?reminder\s*(?:to\s+|for\s+|about\s+)?/i, '')
     .replace(/notify\s+me\s*(?:to\s+|about\s+)?/i, '')
-    .replace(/(?:give|pull|send|get|shoot)\s+me\s+a\s+notification\s*(?:to\s+|about\s+|for\s+)?/i, '')
+    .replace(/(?:give|pull|send|get|shoot)\s+me\s+a\s+(?:notification|reminder|message|ping|text|alert)\s*(?:to\s+|about\s+|for\s+)?/i, '')
+    .replace(/check(?:\s+in)?\s+on\s+me\s*(?:to\s+|about\s+|for\s+)?/i, '')
     .replace(/alert\s+me\s*(?:to\s+|about\s+)?/i, '')
     .replace(/\b(?:in|after)\s+(?:half(?:\s+an)?|a\s+couple(?:\s+of)?|a\s+few|an?|\d+|[a-z]+(?:[\s-][a-z]+)?)\s+(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/i, '')
-    .replace(/\bat\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i, '')
+    .replace(/\b(?:at|on|for|by)\s+\d{1,2}[:.]?\d{0,2}\s*(?:am|pm)?/i, '')
     .replace(/\b(tomorrow|tonight|this evening|in the evening)\b/gi, '')
     .replace(/^\s*(?:to|about)\s+/i, '')
     .replace(/\s{2,}/g, ' ')
@@ -8015,6 +8040,126 @@ function fsClearImport() {
 
 function fsMarkDirty() { /* reserved — lets preview know edit content changed since last render */ }
 
+// Pasting from a PDF, webpage, or another app carries that source's own formatting along
+// with the text — its fonts, colors, spacing, wrapper divs, list markup — which used to
+// cause merged lines and unwanted auto-inserted bullets. The old fix threw away ALL
+// formatting (including bold/italic/underline/size the user actually wants kept). Instead,
+// we sanitize the pasted HTML: keep simple visual formatting (bold, italic, underline,
+// strikethrough, text color, highlight color, and — for headings / explicitly-sized text —
+// font size, so a pasted heading still visibly looks bigger/bolder than body text) and real
+// line breaks, but strip everything else (classes/ids, scripts, images, tables, nested
+// wrapper divs, and any auto-generated bullet/number markers) down to plain inline
+// formatting + <br>.
+const HEADING_SIZES = { H1:'1.6em', H2:'1.4em', H3:'1.25em', H4:'1.1em', H5:'1em', H6:'0.95em' };
+function fsSanitizePastedHTML(html) {
+  const allowedInline = { B:1, STRONG:1, I:1, EM:1, U:1, S:1, STRIKE:1, SPAN:1, MARK:1, SUB:1, SUP:1, CODE:1 };
+  const blockTags = ['DIV','P','LI','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','TR','TD','TH','TABLE','TBODY','THEAD','SECTION','ARTICLE'];
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  container.querySelectorAll('script,style,meta,link,head,title,img').forEach(el => el.remove());
+  // No auto-inserted bullet/number markers — list items just become their own line.
+
+  // Recursively: keep allowed inline formatting tags (rebuilt with only a filtered,
+  // safe style — including font-size, so headings/enlarged text stay visually distinct),
+  // let block tags pass through for the flatten pass below, and unwrap (discard the tag
+  // but keep its contents) anything else — spans with random classes, font wrappers,
+  // source-specific containers, etc.
+  function clean(node) {
+    Array.from(node.childNodes).forEach(child => {
+      if (child.nodeType !== 1) { if (child.nodeType !== 3) child.remove(); return; }
+      clean(child);
+      const tag = child.tagName;
+      if (tag === 'BR') return;
+      // Headings: wrap their (already-cleaned) content in a bold, sized <b> so the size/
+      // weight survives once the heading tag itself is flattened away below.
+      if (HEADING_SIZES[tag]) {
+        const wrap = document.createElement('b');
+        wrap.setAttribute('style', 'font-weight:bold;font-size:' + HEADING_SIZES[tag]);
+        while (child.firstChild) wrap.appendChild(child.firstChild);
+        child.appendChild(wrap);
+        return; // tag itself stays in blockTags and gets flattened into a <br> below
+      }
+      if (allowedInline[tag]) {
+        const style = child.style;
+        const kept = [];
+        const fw = style.fontWeight;
+        if (tag === 'B' || tag === 'STRONG' || fw === 'bold' || fw === 'bolder' || parseInt(fw,10) >= 600) kept.push('font-weight:bold');
+        if (tag === 'I' || tag === 'EM' || style.fontStyle === 'italic' || style.fontStyle === 'oblique') kept.push('font-style:italic');
+        const td = (style.textDecorationLine || style.textDecoration || '');
+        const hasU = tag === 'U' || /underline/.test(td);
+        const hasS = tag === 'S' || tag === 'STRIKE' || /line-through/.test(td);
+        if (hasU || hasS) kept.push('text-decoration:' + [hasU?'underline':'', hasS?'line-through':''].filter(Boolean).join(' '));
+        if (style.color) kept.push('color:' + style.color);
+        if (style.backgroundColor && style.backgroundColor !== 'transparent') kept.push('background-color:' + style.backgroundColor);
+        // Preserve an explicitly-set font size (e.g. Google Docs/Word "headings" that are
+        // really just larger spans, not real <h1>-<h6> tags) so size differences survive,
+        // clamped to a sane range so a stray huge/tiny value can't break the layout.
+        const fsRaw = parseFloat(style.fontSize);
+        if (fsRaw) {
+          const unit = /rem|em/.test(style.fontSize) ? style.fontSize.replace(/^[\d.]+/, '').trim() : 'px';
+          const fsPx = unit === 'px' ? fsRaw : fsRaw * 16;
+          const clampedPx = Math.max(9, Math.min(40, fsPx));
+          kept.push('font-size:' + clampedPx + 'px');
+        }
+        Array.from(child.attributes).forEach(a => child.removeAttribute(a.name));
+        if (kept.length) child.setAttribute('style', kept.join(';'));
+        return;
+      }
+      if (blockTags.includes(tag)) return; // flattened into <br>-separated content below
+      while (child.firstChild) child.parentNode.insertBefore(child.firstChild, child); // unwrap
+      child.remove();
+    });
+  }
+  clean(container);
+
+  // Turn block-level elements into inline content separated by a line break.
+  Array.from(container.querySelectorAll(blockTags.join(','))).forEach(el => {
+    el.parentNode.insertBefore(document.createElement('br'), el.nextSibling);
+    while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el);
+    el.remove();
+  });
+
+  while (container.firstChild && container.firstChild.tagName === 'BR') container.firstChild.remove();
+  while (container.lastChild && container.lastChild.tagName === 'BR') container.lastChild.remove();
+  container.innerHTML = container.innerHTML.replace(/(<br>\s*){3,}/gi, '<br><br>');
+
+  return (container.textContent || '').trim() ? container.innerHTML : '';
+}
+
+function fsHandlePaste(e) {
+  e.preventDefault();
+  const cd = e.clipboardData || window.clipboardData;
+  const html = cd.getData('text/html');
+  if (html && html.trim()) {
+    try {
+      const cleaned = fsSanitizePastedHTML(html);
+      if (cleaned) { document.execCommand('insertHTML', false, cleaned); fsMarkDirty(); return; }
+    } catch (err) { /* fall through to plain-text paste below */ }
+  }
+  const text = cd.getData('text/plain');
+  if (!text) return;
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+  const frag = document.createDocumentFragment();
+  let lastNode = null;
+  text.split('\n').forEach((line, i) => {
+    if (i > 0) frag.appendChild(document.createElement('br'));
+    lastNode = document.createTextNode(line);
+    frag.appendChild(lastNode);
+  });
+  range.insertNode(frag);
+  if (lastNode) {
+    const newRange = document.createRange();
+    newRange.setStartAfter(lastNode);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  }
+  fsMarkDirty();
+}
+
 // ── Rich-text toolbar (Bold/Italic/Underline/color/size/lists/align) ──────
 // The editor is a contenteditable div rather than a plain textarea, so these
 // buttons apply real, visible formatting as you type (WYSIWYG), the same way
@@ -8066,11 +8211,18 @@ function fsGetEditorContent() {
   return type === 'html' ? editor.innerHTML : editor.innerText;
 }
 // Writes content into the editor. Pass asHTML:true for raw markup (imported
-// .html files, generated HTML), otherwise it's inserted as safe plain text.
+// .html files, generated HTML), otherwise it's inserted as safe plain text —
+// with real <br> line breaks, since a contenteditable div's default white-space
+// handling silently collapses raw "\n" characters set via textContent, which
+// otherwise ran every line together (this is what broke multi-line imports/PDFs).
 function fsSetEditorContent(text, asHTML) {
   const editor = document.getElementById('fileCreatorContent');
-  if (asHTML) editor.innerHTML = text || '';
-  else editor.textContent = text || '';
+  if (asHTML) { editor.innerHTML = text || ''; return; }
+  const escaped = (text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  editor.innerHTML = escaped.replace(/\n/g, '<br>');
 }
 
 function fsSwitchTab(tab) {
@@ -8118,14 +8270,35 @@ async function fileCreatorAIGenerate() {
   btn.textContent = existing ? '✎ MODIFYING...' : '✨ GENERATING...';
 
   let sysPrompt;
-  if (existing) {
+  if (type === 'pdf') {
+    // PDF is a binary format — the model must NEVER try to output "raw PDF file
+    // content" (that produces hallucinated PDF-syntax gibberish like "%PDF-1.7 0
+    // obj<</Type/Page..." as literal visible text). Instead it should write the
+    // actual human-readable document content; fsBuildPdfBlob() below is what does
+    // the real PDF typesetting (fonts, pagination, layout) from that plain text.
+    sysPrompt = existing
+      ? `Here is the current text content of a document (it will be typeset into a PDF afterward — you are NOT writing PDF file syntax):\n\n${existing.substring(0, 12000)}\n\nApply this change: "${prompt}"\n\nReturn ONLY the complete, updated document content as plain readable text — real paragraphs, headings (prefix with "## " for section headings), numbered items, questions/answers, etc. as appropriate for the content. No explanation, no markdown code fences, no commentary, and absolutely no PDF binary/object syntax.`
+      : `Write the full, real content for this document request: "${prompt}".\n\nThis is plain document text that will be typeset into a PDF afterward — you are NOT generating a PDF file, so never output PDF binary/object syntax (no "%PDF", "obj", "stream", "endobj", xref tables, etc.). Write exactly what a person would actually read on the page: real paragraphs, section headings (prefix with "## "), and if the request is a worksheet/exam/quiz, write out every actual question, choice, and (if asked) answer key in full — not placeholders like "[Question 1]" or "50 questions here". Return ONLY that document text — no explanation, no markdown code fences, no commentary.`;
+  } else if (existing) {
     sysPrompt = `Here is the current content of a ${type.toUpperCase()} file:\n\n${existing.substring(0, 12000)}\n\nApply this change: "${prompt}"\n\nReturn ONLY the complete, updated raw file content — no explanation, no markdown fences, no commentary. Output the full file, not just the changed part.`;
   } else {
     sysPrompt = `Generate a ${type.toUpperCase()} file based on this request: "${prompt}". Return ONLY the raw file content — no explanation, no markdown fences, no extra commentary. Just the file content itself.`;
   }
 
+  const FS_GEN_SYSTEM = 'You generate or edit file/document content exactly as requested. Output ONLY the raw content itself — no explanation, no preamble, no markdown code fences, no commentary. Never output placeholders (e.g. "[Question 1]" or "...") — always write the real, complete content in full.';
+
   try {
-    const reply = await callGroq(sysPrompt);
+    // Document/file generation needs far more room than a normal chat reply (whose
+    // default cap is only ~500 tokens, good for a sentence or two but nowhere near
+    // enough for a full document, article, or exam paper). It also doesn't need
+    // ANNA's full assistant persona or chat history, so we use a lean system prompt
+    // and skip history — freeing up the token budget for the actual generated
+    // content, and size the output cap dynamically so system+input+output stays
+    // safely under the account's real per-minute token limit no matter how long the
+    // request (or, when editing, the existing file content) already is.
+    const reqTokens = fsRoughTokenCount(sysPrompt) + fsRoughTokenCount(FS_GEN_SYSTEM);
+    const maxTokens = Math.max(500, Math.min(3500, 5500 - reqTokens));
+    const reply = await callGroq(sysPrompt, null, 0, true, { maxTokens, systemPrompt: FS_GEN_SYSTEM, skipHistory: true });
     const cleaned = reply.replace(/^\`\`\`[\w]*\n?/,'').replace(/\n?\`\`\`$/,'').trim();
     fsSetEditorContent(cleaned, type === 'html');
 
@@ -8247,6 +8420,7 @@ async function downloadCreatedFile() {
       blob = await fsBuildPdfBlob(content, name, {
         align, images,
         scriptKey: scriptKey === null ? 'latin' : scriptKey,
+        richRoot: document.getElementById('fileCreatorContent'),
         onProgress: (msg) => { if (btn) btn.textContent = '⬇ ' + msg.toUpperCase(); }
       });
     } finally {
@@ -8405,8 +8579,135 @@ async function fsEnsureScriptFont(doc, scriptKey, onProgress) {
 // opts.sectionTitles: when the content was generated as "## Heading" sections (long documents),
 // pass the section list here to get a clickable Table of Contents page + page-number footers.
 // opts.onProgress: optional callback(message) fired while a language font is downloading / building.
+// ── Rich-text → PDF rendering ────────────────────────────────────────────
+// Walks the File Studio editor's live DOM and turns it into a flat list of
+// styled text "runs" (bold/italic/underline/strike/color/highlight/font-size),
+// using getComputedStyle so it doesn't matter which exact tags the browser's
+// execCommand happened to produce — the resolved style is what gets rendered.
+function fsCollectRichRuns(root) {
+  const runs = [];
+  const pxToPt = px => px * 0.75; // 96dpi CSS px → PDF pt
+  // The editor uses a pale cyan as its default on-screen text color (readable on the app's
+  // dark theme), which is nearly invisible on a white PDF page. Anything still at that
+  // inherited default renders as normal black text in the PDF; only text the user actually
+  // recolored with the toolbar's color button keeps its custom color.
+  const inheritedColor = getComputedStyle(root).color;
+  function styleFor(el) {
+    const cs = getComputedStyle(el);
+    const decoration = (cs.textDecorationLine || cs.textDecoration || '');
+    return {
+      bold: parseInt(cs.fontWeight, 10) >= 600 || cs.fontWeight === 'bold',
+      italic: cs.fontStyle === 'italic',
+      underline: decoration.includes('underline'),
+      strike: decoration.includes('line-through'),
+      color: cs.color === inheritedColor ? 'rgb(0, 0, 0)' : cs.color,
+      bg: cs.backgroundColor,
+      sizePt: pxToPt(parseFloat(cs.fontSize) || 11)
+    };
+  }
+  // Any literal "\n" left inside a single text node (can happen depending on how content
+  // was pasted/inserted) is split into its own run + lineBreak, so it still shows as a real
+  // line instead of silently disappearing/running together in the rendered PDF.
+  function pushTextNode(node, style, out) {
+    const parts = node.textContent.split('\n');
+    parts.forEach((part, i) => {
+      if (part) out.push(Object.assign({ text: part }, style));
+      if (i < parts.length - 1) out.push({ lineBreak: true });
+    });
+  }
+  function walk(node, out) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.textContent) pushTextNode(node, styleFor(node.parentElement || root), out);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (node.tagName === 'BR') { out.push({ lineBreak: true }); return; }
+    if (node.tagName === 'UL' || node.tagName === 'OL') {
+      let n = 1;
+      Array.from(node.children).forEach(li => {
+        if (li.tagName !== 'LI') return;
+        out.push({ bulletMark: node.tagName === 'OL' ? (n++ + '.') : '•' });
+        Array.from(li.childNodes).forEach(c => walk(c, out));
+        out.push({ lineBreak: true });
+      });
+      return;
+    }
+    Array.from(node.childNodes).forEach(c => walk(c, out));
+  }
+  const topNodes = Array.from(root.childNodes);
+  topNodes.forEach((node, i) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.textContent) pushTextNode(node, styleFor(root), runs);
+    } else {
+      walk(node, runs);
+    }
+    if (i < topNodes.length - 1) runs.push({ lineBreak: true }); // each top-level <div> is one typed line
+  });
+  return runs;
+}
+function fsParseRgb(str) {
+  const m = (str || '').match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/);
+  return m ? [Math.round(+m[1]), Math.round(+m[2]), Math.round(+m[3])] : [0, 0, 0];
+}
+// Draws the collected runs into an open jsPDF doc, word-wrapping and paging as needed,
+// honoring each run's own size/color/bold/italic/underline/strike/highlight.
+function fsRenderRichRuns(doc, runs, opts) {
+  const { margin, maxWidth, pageH, y: startY, fontName, align } = opts;
+  let x = margin, y = startY, lineHeight = 15;
+  function newPage() { doc.addPage(); y = margin; x = margin; }
+  function ensureRoom(h) { if (y + h > pageH - margin) newPage(); }
+  function applyStyle(run) {
+    if (fontName) {
+      doc.setFont(fontName, 'normal'); // embedded language fonts only ship a normal weight
+    } else {
+      let style = 'normal';
+      if (run.bold && run.italic) style = 'bolditalic';
+      else if (run.bold) style = 'bold';
+      else if (run.italic) style = 'italic';
+      try { doc.setFont('helvetica', style); } catch (e) { doc.setFont('helvetica', 'normal'); }
+    }
+    doc.setFontSize(run.sizePt || 11);
+    const [r, g, b] = fsParseRgb(run.color);
+    doc.setTextColor(r, g, b);
+  }
+  runs.forEach(run => {
+    if (run.lineBreak) { y += lineHeight || 15; x = margin; return; }
+    if (run.bulletMark) {
+      ensureRoom(lineHeight || 15);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
+      doc.text(run.bulletMark, x, y);
+      x = margin + 16;
+      return;
+    }
+    if (!run.text) return;
+    applyStyle(run);
+    lineHeight = Math.max(11 * 1.35, (run.sizePt || 11) * 1.35);
+    const tokens = run.text.split(/(\s+)/).filter(t => t !== '');
+    tokens.forEach(tok => {
+      const isSpace = /^\s+$/.test(tok);
+      const w = doc.getTextWidth(tok);
+      if (!isSpace && x + w > margin + maxWidth) { y += lineHeight; x = margin; }
+      ensureRoom(lineHeight);
+      if (!isSpace) {
+        const [bgR, bgG, bgB] = fsParseRgb(run.bg);
+        if (run.bg && !(bgR === 0 && bgG === 0 && bgB === 0) && run.bg !== 'rgba(0, 0, 0, 0)' && run.bg !== 'transparent') {
+          doc.setFillColor(bgR, bgG, bgB);
+          doc.rect(x, y - run.sizePt * 0.78, w, run.sizePt * 1.05, 'F');
+          const [r, g, b] = fsParseRgb(run.color);
+          doc.setTextColor(r, g, b);
+        }
+        doc.text(tok, x, y);
+        if (run.underline) doc.line(x, y + run.sizePt * 0.12 + 1, x + w, y + run.sizePt * 0.12 + 1);
+        if (run.strike) doc.line(x, y - run.sizePt * 0.3, x + w, y - run.sizePt * 0.3);
+      }
+      x += w;
+    });
+  });
+  return y + lineHeight;
+}
+
 async function fsBuildPdfBlob(content, titleText, opts = {}) {
-  const { align = 'left', images = [], onProgress, sectionTitles = null } = opts;
+  const { align = 'left', images = [], onProgress, sectionTitles = null, richRoot = null } = opts;
   const scriptKey = opts.scriptKey || fsDetectScript(`${titleText || ''}\n${content || ''}`);
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({unit: 'pt', format: 'a4'});
@@ -8429,7 +8730,7 @@ async function fsBuildPdfBlob(content, titleText, opts = {}) {
   // detecting several "## Heading" paragraphs in the content itself (e.g. pasted straight
   // into the File Studio modal).
   const detectedHeadingCount = paragraphs.filter(p => /^#{1,2}\s+.+$/.test(p.trim())).length;
-  const wantsToc = (Array.isArray(sectionTitles) && sectionTitles.length >= 3) || detectedHeadingCount >= 3;
+  const wantsToc = !richRoot && ((Array.isArray(sectionTitles) && sectionTitles.length >= 3) || detectedHeadingCount >= 3);
   const tocEntries = []; // {title, page}
   if (wantsToc) { doc.addPage(); y = margin; if (onProgress) onProgress('Laying out the table of contents...'); }
 
@@ -8468,6 +8769,13 @@ async function fsBuildPdfBlob(content, titleText, opts = {}) {
 
   setBody();
   doc.setFontSize(11);
+  if (richRoot) {
+    // ★ Content came straight from the File Studio WYSIWYG editor — render it using each
+    // run's actual bold/italic/underline/color/font-size instead of flattening everything
+    // to one uniform style, so the PDF visually matches what was typed.
+    const runs = fsCollectRichRuns(richRoot);
+    y = fsRenderRichRuns(doc, runs, { margin, maxWidth, pageW, pageH, y, fontName, align });
+  } else {
   paragraphs.forEach(para => {
     const trimmed = para.trim();
     if (!trimmed) return;
@@ -8505,6 +8813,7 @@ async function fsBuildPdfBlob(content, titleText, opts = {}) {
     y += lineHeight * 0.6; // paragraph spacing
     if (imgQueue.length) placeImage(imgQueue.shift(), maxWidth * 0.72);
   });
+  }
 
   // Any leftover images (more images than paragraphs) go at the end.
   while (imgQueue.length) placeImage(imgQueue.shift(), maxWidth * 0.72);
