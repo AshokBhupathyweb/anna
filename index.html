@@ -854,6 +854,20 @@
   .fs-tab.active{border-color:var(--arc);color:var(--arc);background:var(--arc-deep);}
   .fs-tab:hover{color:var(--arc);}
 
+  /* Rich-text formatting toolbar for the File Studio editor */
+  .fs-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 8px;background:rgba(0,212,255,0.05);border:1px solid var(--border);border-bottom:none;border-radius:4px 4px 0 0;flex-shrink:0;}
+  .fs-tool-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:0.66rem;padding:5px 9px;cursor:pointer;border-radius:3px;line-height:1;min-width:26px;text-align:center;}
+  .fs-tool-btn:hover{border-color:var(--arc);color:var(--arc);background:var(--arc-deep);}
+  .fs-tool-btn.active{border-color:var(--arc);color:var(--arc);background:var(--arc-deep);box-shadow:0 0 8px var(--arc-glow);}
+  .fs-tool-sep{width:1px;align-self:stretch;background:var(--border);margin:2px 3px;}
+  .fs-tool-color-wrap{display:flex;align-items:center;gap:3px;border:1px solid var(--border);border-radius:3px;padding:3px 6px;cursor:pointer;color:var(--text-dim);font-size:0.66rem;}
+  .fs-tool-color-wrap:hover{border-color:var(--arc);color:var(--arc);}
+  .fs-tool-color-wrap input[type="color"]{width:18px;height:18px;padding:0;border:none;background:none;cursor:pointer;}
+  .fs-tool-select{background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:0.62rem;padding:5px 6px;border-radius:3px;cursor:pointer;}
+  .fs-tool-select:hover{border-color:var(--arc);color:var(--arc);}
+  #fileCreatorContent[contenteditable]{caret-color:var(--arc);}
+  #fileCreatorContent[contenteditable]:empty:before{content:attr(data-placeholder);color:var(--text-dim);pointer-events:none;}
+
   /* ══════════════════════════════════════════
      VIDEO STUDIO
   ══════════════════════════════════════════ */
@@ -1294,8 +1308,32 @@
         <button class="fs-tab active" id="fsTabEdit" onclick="fsSwitchTab('edit')">✎ EDIT</button>
         <button class="fs-tab" id="fsTabPreview" onclick="fsSwitchTab('preview')">👁 PREVIEW</button>
       </div>
-      <div id="fsEditView" style="flex:1;min-height:260px;display:flex;">
-        <textarea id="fileCreatorContent" style="flex:1;min-height:260px;background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:12px;outline:none;resize:none;line-height:1.7;border-radius:4px;margin-bottom:12px" placeholder="Type content here, import a file, or use AI Generate above..." oninput="fsMarkDirty()"></textarea>
+      <div id="fsEditView" style="flex:1;min-height:260px;display:flex;flex-direction:column;">
+        <div class="fs-toolbar" id="fsToolbar">
+          <button type="button" class="fs-tool-btn" title="Bold (Ctrl+B)" onmousedown="event.preventDefault()" onclick="fsExec('bold')"><b>B</b></button>
+          <button type="button" class="fs-tool-btn" title="Italic (Ctrl+I)" onmousedown="event.preventDefault()" onclick="fsExec('italic')"><i>I</i></button>
+          <button type="button" class="fs-tool-btn" title="Underline (Ctrl+U)" onmousedown="event.preventDefault()" onclick="fsExec('underline')"><u>U</u></button>
+          <button type="button" class="fs-tool-btn" title="Strikethrough" onmousedown="event.preventDefault()" onclick="fsExec('strikeThrough')"><s>S</s></button>
+          <div class="fs-tool-sep"></div>
+          <button type="button" class="fs-tool-btn" title="Decrease character size" onmousedown="event.preventDefault()" onclick="fsChangeFontSize(-1)">A⁻</button>
+          <button type="button" class="fs-tool-btn" title="Increase character size" onmousedown="event.preventDefault()" onclick="fsChangeFontSize(1)">A⁺</button>
+          <div class="fs-tool-sep"></div>
+          <label class="fs-tool-color-wrap" title="Text color">🎨<input type="color" id="fsTextColor" value="#c8eaf5" onmousedown="event.stopPropagation()" oninput="fsExec('foreColor', this.value)"></label>
+          <label class="fs-tool-color-wrap" title="Highlight color">🖍<input type="color" id="fsHighlightColor" value="#ffd700" onmousedown="event.stopPropagation()" oninput="fsExec('hiliteColor', this.value)"></label>
+          <div class="fs-tool-sep"></div>
+          <button type="button" class="fs-tool-btn" title="Bullet list" onmousedown="event.preventDefault()" onclick="fsExec('insertUnorderedList')">•≡</button>
+          <button type="button" class="fs-tool-btn" title="Numbered list" onmousedown="event.preventDefault()" onclick="fsExec('insertOrderedList')">1≡</button>
+          <select class="fs-tool-select" title="Alignment" onmousedown="event.stopPropagation()" onchange="fsExec(this.value); this.selectedIndex=-1;">
+            <option value="" disabled selected hidden>Align</option>
+            <option value="justifyLeft">⯇ Left</option>
+            <option value="justifyCenter">☰ Center</option>
+            <option value="justifyRight">⯈ Right</option>
+            <option value="justifyFull">☰ Justify</option>
+          </select>
+          <div class="fs-tool-sep"></div>
+          <button type="button" class="fs-tool-btn" title="Clear formatting" onmousedown="event.preventDefault()" onclick="fsExec('removeFormat')">Clear</button>
+        </div>
+        <div id="fileCreatorContent" contenteditable="true" data-placeholder="Type content here, import a file, or use AI Generate above..." style="flex:1;min-height:220px;background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:12px;outline:none;overflow-y:auto;line-height:1.7;border-radius:0 0 4px 4px;margin-bottom:12px" oninput="fsMarkDirty()"></div>
       </div>
       <div id="fsPreviewView" style="flex:1;min-height:260px;margin-bottom:12px;display:none;background:#fff;border:1px solid var(--border);border-radius:4px;overflow:auto;">
         <iframe id="fsPreviewFrame" style="width:100%;height:100%;min-height:260px;border:none;display:none;background:#fff;"></iframe>
@@ -7851,7 +7889,7 @@ window.handleFileReadSelect = function(input) {
 let fsState = { mode: 'text', importedExt: '', importedFilename: '', imageBase64: '', imageMime: '', hasImported: false, pendingImages: [] };
 
 function openFileCreator() {
-  document.getElementById('fileCreatorContent').value = '';
+  fsSetEditorContent('');
   document.getElementById('fileCreatorName').value = '';
   document.getElementById('fileCreatorAIPrompt').value = '';
   document.getElementById('fsImportInput').value = '';
@@ -7948,8 +7986,8 @@ async function fsImportFile(file) {
       text = await file.text();
     }
 
-    document.getElementById('fileCreatorContent').value = text.substring(0, 40000);
     document.getElementById('fileCreatorType').value = typeExt;
+    fsSetEditorContent(text.substring(0, 40000), typeExt === 'html');
     document.getElementById('fileCreatorName').value = file.name.replace(/\.[^.]+$/, '');
     fsState.importedExt = typeExt;
     fsState.importedFilename = file.name;
@@ -7963,7 +8001,7 @@ async function fsImportFile(file) {
 }
 
 function fsClearImport() {
-  document.getElementById('fileCreatorContent').value = '';
+  fsSetEditorContent('');
   document.getElementById('fileCreatorName').value = '';
   document.getElementById('fsImportInput').value = '';
   document.getElementById('fsImportInfo').textContent = 'No file imported — start from scratch or import one to modify';
@@ -7976,6 +8014,64 @@ function fsClearImport() {
 }
 
 function fsMarkDirty() { /* reserved — lets preview know edit content changed since last render */ }
+
+// ── Rich-text toolbar (Bold/Italic/Underline/color/size/lists/align) ──────
+// The editor is a contenteditable div rather than a plain textarea, so these
+// buttons apply real, visible formatting as you type (WYSIWYG), the same way
+// Word/Google Docs toolbars work.
+function fsExec(cmd, value) {
+  const editor = document.getElementById('fileCreatorContent');
+  editor.focus();
+  try { document.execCommand(cmd, false, value != null ? value : null); } catch (e) {}
+  fsMarkDirty();
+}
+// "Character size increase/decrease" — bumps the font-size of the current
+// selection (or the whole editor, if nothing is selected) by a couple px per click.
+function fsChangeFontSize(delta) {
+  const editor = document.getElementById('fileCreatorContent');
+  editor.focus();
+  const sel = window.getSelection();
+  const step = delta * 2;
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+    const cur = parseFloat(getComputedStyle(editor).fontSize) || 11;
+    editor.style.fontSize = Math.max(8, Math.min(48, cur + step)) + 'px';
+    fsMarkDirty();
+    return;
+  }
+  const range = sel.getRangeAt(0);
+  const refEl = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+  const baseSize = parseFloat(getComputedStyle(refEl || editor).fontSize) || 11;
+  const span = document.createElement('span');
+  span.style.fontSize = Math.max(8, Math.min(48, baseSize + step)) + 'px';
+  try {
+    range.surroundContents(span);
+  } catch (e) {
+    // selection spans multiple elements — extract & re-wrap instead
+    const frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  const newRange = document.createRange();
+  newRange.selectNodeContents(span);
+  sel.addRange(newRange);
+  fsMarkDirty();
+}
+// Reads the editor's content in whatever shape the current output type needs:
+// HTML files keep full markup (so bold/color/etc. survive into the download),
+// every other type is flattened to plain text (formatting stays visual-only).
+function fsGetEditorContent() {
+  const editor = document.getElementById('fileCreatorContent');
+  const type = document.getElementById('fileCreatorType')?.value;
+  return type === 'html' ? editor.innerHTML : editor.innerText;
+}
+// Writes content into the editor. Pass asHTML:true for raw markup (imported
+// .html files, generated HTML), otherwise it's inserted as safe plain text.
+function fsSetEditorContent(text, asHTML) {
+  const editor = document.getElementById('fileCreatorContent');
+  if (asHTML) editor.innerHTML = text || '';
+  else editor.textContent = text || '';
+}
 
 function fsSwitchTab(tab) {
   const isEdit = tab === 'edit';
@@ -7990,7 +8086,7 @@ function fsSwitchTab(tab) {
 // sandboxed rendering, everything else shows as clean readable text.
 function fsRenderPreview() {
   const type = document.getElementById('fileCreatorType').value;
-  const content = document.getElementById('fileCreatorContent').value;
+  const content = fsGetEditorContent();
   const frame = document.getElementById('fsPreviewFrame');
   const pre = document.getElementById('fsPreviewPre');
   const empty = document.getElementById('fsPreviewEmpty');
@@ -8013,8 +8109,7 @@ function fsRenderPreview() {
 async function fileCreatorAIGenerate() {
   const prompt = document.getElementById('fileCreatorAIPrompt').value.trim();
   const type = document.getElementById('fileCreatorType').value;
-  const ta = document.getElementById('fileCreatorContent');
-  const existing = ta.value.trim();
+  const existing = fsGetEditorContent().trim();
   if (!prompt) { addSystemMsg('Type a description of what to generate or how to modify the file first.'); return; }
 
   const btn = document.getElementById('fsGenBtn');
@@ -8031,7 +8126,8 @@ async function fileCreatorAIGenerate() {
 
   try {
     const reply = await callGroq(sysPrompt);
-    ta.value = reply.replace(/^\`\`\`[\w]*\n?/,'').replace(/\n?\`\`\`$/,'').trim();
+    const cleaned = reply.replace(/^\`\`\`[\w]*\n?/,'').replace(/\n?\`\`\`$/,'').trim();
+    fsSetEditorContent(cleaned, type === 'html');
 
     // ★ Pick up plain-English commands typed right into the prompt box:
     // "name it Q3 Budget", "with good alignment", "make it colorful"
@@ -8066,7 +8162,7 @@ async function fsAddImagesToContent(sourceText) {
     if (statusEl) statusEl.textContent = 'Photos can be embedded into PDF, HTML or Markdown files — pick one of those types to add photos.';
     return;
   }
-  const text = sourceText || document.getElementById('fileCreatorAIPrompt').value.trim() || document.getElementById('fileCreatorContent').value.trim();
+  const text = sourceText || document.getElementById('fileCreatorAIPrompt').value.trim() || fsGetEditorContent().trim();
   if (!text) { if (statusEl) statusEl.textContent = 'Describe what the photos should be of first.'; return; }
 
   if (btn) btn.disabled = true;
@@ -8080,8 +8176,9 @@ async function fsAddImagesToContent(sourceText) {
     if (type === 'pdf') {
       fsState.pendingImages = images; // drawn into the PDF by downloadCreatedFile
     } else {
-      const ta = document.getElementById('fileCreatorContent');
-      ta.value = type === 'html' ? fsInjectImagesIntoHtml(ta.value, images) : fsInjectImagesIntoMarkdown(ta.value, images);
+      const current = fsGetEditorContent();
+      const updated = type === 'html' ? fsInjectImagesIntoHtml(current, images) : fsInjectImagesIntoMarkdown(current, images);
+      fsSetEditorContent(updated, type === 'html');
     }
     if (statusEl) { statusEl.style.color = 'var(--green)'; statusEl.textContent = `✓ ${images.length} real photo(s) found and added — see Preview / Create & Download.`; }
     fsSwitchTab('preview');
@@ -8133,7 +8230,7 @@ async function fsGenerateImageEdit() {
 async function downloadCreatedFile() {
   const type = document.getElementById('fileCreatorType').value;
   const name = fsSanitizeFilename(document.getElementById('fileCreatorName').value.trim()) || 'anna-created';
-  let content = document.getElementById('fileCreatorContent').value;
+  let content = fsGetEditorContent();
   if (!content.trim()) { addSystemMsg('Add some content first.'); return; }
 
   if (type === 'pdf') {
@@ -8185,7 +8282,7 @@ async function sendCreatedFileToAnna() {
     }
     return;
   }
-  const content = document.getElementById('fileCreatorContent').value;
+  const content = fsGetEditorContent();
   const name = (document.getElementById('fileCreatorName').value.trim()||'new-file');
   const type = document.getElementById('fileCreatorType').value;
   const filename = name + '.' + type;
@@ -9110,7 +9207,10 @@ function tryHandleRenameLastFileRequest(text) {
     const text = input?.value?.trim();
     if (!text) return _prev.apply(this, arguments);
     const lo = text.toLowerCase().trim();
-    if (/^(?:create|make|new|write)\s+(?:a\s+)?(?:new\s+)?(?:file|document|script)$/i.test(lo)) {
+    // Bare "create/make a doc/file" with no topic described (e.g. "let's create a doc",
+    // "please make a new file") opens File Studio directly. Includes "doc" as an alias for
+    // "document"/"docx" — previously only "document" matched, so plain "doc" fell through.
+    if (/^(?:hey\s+anna[,]?\s+)?(?:please\s+|can\s+you\s+|could\s+you\s+|i\s+want\s+to\s+|i\s+wanna\s+|let'?s\s+|lets\s+)*(?:create|make|open|new|write|start)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:file|document|docs?|docx|script)s?[.!]?$/i.test(lo)) {
       input.value = ''; openFileCreator(); return;
     }
     if (tryHandleRenameLastFileRequest(text)) { input.value = ''; input.style.height = 'auto'; return; }
