@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -338,6 +337,27 @@
   .face-del{background:rgba(255,60,60,0.75);color:#fff;border:none;width:16px;height:16px;border-radius:50%;cursor:pointer;font-size:0.5rem;flex-shrink:0;line-height:1;}
   .reminder-time{font-family:'Share Tech Mono',monospace;color:var(--red);font-size:0.58rem;white-space:nowrap;}
   .reminder-del{background:transparent;border:none;color:var(--text-dim);cursor:pointer;font-size:0.65rem;padding:0 2px;margin-left:auto;}
+
+  /* ALARMS */
+  .alarm-item{display:flex;gap:7px;align-items:center;font-size:0.63rem;padding:5px 7px;background:rgba(255,215,0,0.07);border-left:2px solid var(--gold);margin-bottom:4px;}
+  .alarm-item.disabled{opacity:0.4;}
+  .alarm-time{font-family:'Share Tech Mono',monospace;color:var(--gold);font-size:0.58rem;white-space:nowrap;}
+  .alarm-toggle{background:transparent;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;font-size:0.55rem;padding:2px 6px;border-radius:2px;flex-shrink:0;}
+  .alarm-toggle.on{border-color:var(--green);color:var(--green);}
+  .alarm-del{background:transparent;border:none;color:var(--text-dim);cursor:pointer;font-size:0.65rem;padding:0 2px;margin-left:0;flex-shrink:0;}
+  #alarmOverlay{position:fixed;inset:0;z-index:400;background:rgba(2,6,12,0.97);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;}
+  #alarmOverlay.show{display:flex;}
+  .alarm-ring-icon{font-size:4rem;animation:alarmShake 0.6s ease-in-out infinite;}
+  @keyframes alarmShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}}
+  .alarm-ring-title{font-family:'Orbitron',monospace;font-size:1.4rem;letter-spacing:0.3em;color:var(--gold);text-shadow:0 0 25px rgba(255,215,0,0.6);}
+  .alarm-ring-time{font-family:'Share Tech Mono',monospace;font-size:2.2rem;color:var(--text);}
+  .alarm-ring-label{font-family:'Exo 2',sans-serif;font-size:1rem;color:var(--text-dim);max-width:80vw;}
+  .alarm-ring-btns{display:flex;gap:16px;margin-top:10px;}
+  .alarm-ring-btns button{font-family:'Orbitron',monospace;font-size:0.75rem;letter-spacing:0.15em;padding:12px 26px;cursor:pointer;border-radius:3px;}
+  #alarmSnoozeBtn{background:transparent;border:1px solid var(--arc);color:var(--arc);}
+  #alarmSnoozeBtn:hover{background:var(--arc-deep);}
+  #alarmStopBtn{background:var(--red);border:1px solid var(--red);color:#fff;}
+  #alarmStopBtn:hover{box-shadow:0 0 20px rgba(255,60,60,0.6);}
 
   /* MODAL */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,5,15,0.85);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px);}
@@ -1149,6 +1169,16 @@
 </div>
 
 <div id="reminderToast"></div>
+<div id="alarmOverlay">
+  <div class="alarm-ring-icon">⏰</div>
+  <div class="alarm-ring-title">ALARM</div>
+  <div class="alarm-ring-time" id="alarmRingTime">--:--</div>
+  <div class="alarm-ring-label" id="alarmRingLabel"></div>
+  <div class="alarm-ring-btns">
+    <button id="alarmSnoozeBtn" onclick="snoozeAlarm()">SNOOZE 5 MIN</button>
+    <button id="alarmStopBtn" onclick="stopAlarm()">STOP</button>
+  </div>
+</div>
 
 <!-- ============================================================
      COMPANION MODE — live searchable memory log viewer (Feature 8/9)
@@ -1805,6 +1835,14 @@
       <div id="notifPermStatus" style="font-family:'Share Tech Mono',monospace;font-size:0.52rem;margin-top:5px;color:var(--text-dim)">Checking…</div>
     </div>
     <div class="dev-section">
+      <div class="dev-title">ALARMS</div>
+      <div id="alarmList" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--text-dim);margin-top:5px">Say "set an alarm for 7am", "wake me up in 20 minutes", or "set an alarm for 6:30am every day". While ringing, say "stop the alarm" or "snooze".</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+        <button class="vision-btn" style="flex:1;margin:0" onclick="promptSetAlarm()">⏰ SET ALARM</button>
+      </div>
+    </div>
+    <div class="dev-section">
       <div class="dev-title">MEMORY</div>
       <div class="metric-row"><span class="metric-label">STORAGE</span><span class="metric-val green" id="storageNameDisplay" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span></div>
       <div class="metric-row"><span class="metric-label">SAVED MSGS</span><span class="metric-val" id="savedMsgCount">—</span></div>
@@ -2085,7 +2123,8 @@ function micAudioConstraints(extra) {
 }
 
 // ─── STATE ───
-let tasks = [], schedule = [], mode = 'general', msgCount = 0;
+let tasks = [], schedule = [], alarms = [], mode = 'general', msgCount = 0;
+let ringingAlarmId = null; // ★ id of the alarm currently ringing (overlay shown), or null
 let lastImagePrompt = null; // ★ remembers the last image description so "give me more" / follow-ups work
 let isBusy = false;                 // ★ true while a chat reply or image is generating — controls send/stop button
 let currentAbortController = null;  // ★ AbortController for the in-flight Groq fetch, so Stop can cancel it
@@ -2374,6 +2413,7 @@ function updateClock() {
   }
   updateMetrics();   // keep SR state badge live
   checkReminders();
+  checkAlarms();
 }
 setInterval(updateClock, 1000);
 
@@ -4764,6 +4804,44 @@ async function sendMessage() {
       // Still pass to AI for a natural confirmation
     }
 
+    // ─── ALARM: stop / snooze (only meaningful while one is actually ringing) ───
+    if (/\b(?:stop|turn\s+off|silence|dismiss|cancel|kill)\s+(?:the\s+)?alarm\b/i.test(lo) || (ringingAlarmId != null && /^\s*stop\s*$/i.test(lo))) {
+      if (ringingAlarmId != null) { stopAlarm(); return; }
+      const msg = `No alarm is ringing right now, ${config.bossName}.`;
+      addMsg('anna', msg); saveChat('assistant', msg); fridaySpeak(msg);
+      return;
+    }
+    if (/\bsnooze\b/i.test(lo)) {
+      if (ringingAlarmId != null) { snoozeAlarm(); return; }
+      const msg = `No alarm is ringing right now, ${config.bossName}.`;
+      addMsg('anna', msg); saveChat('assistant', msg); fridaySpeak(msg);
+      return;
+    }
+
+    // ─── ALARM: delete an existing alarm by label ───
+    let mDelAlarm = text.match(/^(?:delete|remove|cancel|clear)\s+(?:the\s+)?alarm[:\s]+(.+)/i);
+    if (mDelAlarm) {
+      const idx = findAlarmIndex(mDelAlarm[1]);
+      if (idx > -1) {
+        const removed = alarms[idx].label;
+        alarms.splice(idx, 1); saveAlarms(); renderAlarmList();
+        const conf = `Deleted alarm: "${removed}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      } else {
+        const conf = `I couldn't find an alarm matching "${mDelAlarm[1]}", ${config.bossName}.`;
+        addMsg('anna', conf); saveChat('assistant', conf); fridaySpeak(conf);
+      }
+      return;
+    }
+
+    // ─── ALARM: set a new one ───
+    // Catches: "set an alarm for 7am", "set an alarm at 6:30am every day",
+    // "wake me up at 7", "wake me up in 20 minutes", "add/create an alarm...".
+    if (/\bset\s+(?:a\s+|an?\s+)?alarm\b|\b(?:add|create)\s+(?:a\s+|an?\s+)?alarm\b|\bwake\s+me\s+up\b|\balarm\s+(?:for|at|on)\s+/i.test(lo)) {
+      handleAlarm(text);
+      // Still pass to AI for a natural confirmation
+    }
+
     // ─── SCHEDULE / EVENT ───
     // ★ FIX: previously this only fired if a time digit (e.g. "at 3pm") was present,
     // so saying "add event dentist visit" (no time) silently fell through to the AI,
@@ -6162,6 +6240,171 @@ function handleReminder(text) {
   document.getElementById('reminderList').appendChild(d);
   addSystemMsg(`⏰ Reminder set: "${label}" — ${display === 'SOON' ? "couldn't detect a time, showing it here anyway" : display}.`);
 }
+
+// ============================================================
+//  ALARMS — full-screen ringing overlay + looping sound, set by
+//  voice or text ("set an alarm for 7am", "wake me up in 20
+//  minutes", "set an alarm for 6:30am every day"). Rings until
+//  the user says/taps STOP, or SNOOZE to push it back 5 minutes.
+//  Reuses the same natural-language time parsers as reminders.
+// ============================================================
+function saveAlarms() { dbSet('anna_alarms', alarms); }
+
+function renderAlarmList() {
+  const wrap = document.getElementById('alarmList');
+  if (!wrap) return;
+  if (!alarms.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = alarms.map(a => {
+    const label = escHtml(a.label || 'Alarm') + (a.repeatDaily ? ' (daily)' : '');
+    return `<div class="alarm-item${a.enabled===false?' disabled':''}">`
+      + `<span class="alarm-time">${formatDueLabel(a.dueAt)}</span>`
+      + `<span style="flex:1">${label}</span>`
+      + `<button class="alarm-toggle${a.enabled===false?'':' on'}" onclick="toggleAlarm(${a.id})">${a.enabled===false?'OFF':'ON'}</button>`
+      + `<button class="alarm-del" onclick="deleteAlarm(${a.id})">✕</button>`
+      + `</div>`;
+  }).join('');
+}
+
+function toggleAlarm(id) {
+  const a = alarms.find(x => x.id === id);
+  if (!a) return;
+  a.enabled = a.enabled === false ? true : false;
+  // Re-arm a re-enabled alarm for the next occurrence of its time if it already passed.
+  if (a.enabled && a.dueAt <= Date.now()) a.dueAt = nextDailyOccurrence(a.dueAt);
+  saveAlarms(); renderAlarmList();
+}
+function deleteAlarm(id) {
+  alarms = alarms.filter(x => x.id !== id);
+  saveAlarms(); renderAlarmList();
+}
+function findAlarmIndex(query) {
+  const q = String(query).toLowerCase().trim();
+  if (!q) return -1;
+  let idx = alarms.findIndex(a => (a.label||'').toLowerCase().trim() === q);
+  if (idx === -1) idx = alarms.findIndex(a => (a.label||'').toLowerCase().includes(q));
+  return idx;
+}
+// Bumps a timestamp forward by 24h steps until it's in the future — used to
+// reschedule a daily-repeating alarm for its next occurrence.
+function nextDailyOccurrence(dueAt) {
+  let d = dueAt;
+  while (d <= Date.now()) d += 24*60*60*1000;
+  return d;
+}
+
+function handleAlarm(text) {
+  const relMs = parseRelativeDuration(text);
+  let dueAt = null;
+  if (relMs != null) {
+    dueAt = Date.now() + relMs;
+  } else {
+    const abs = parseAbsoluteReminder(text);
+    if (abs != null) dueAt = abs;
+  }
+  const repeatDaily = /\b(every ?day|daily|each day|every morning|every night)\b/i.test(text);
+  if (dueAt == null) {
+    const msg = `I didn't catch a time for that alarm, ${config.bossName} — try something like "set an alarm for 7am" or "wake me up in 20 minutes".`;
+    addMsg('anna', msg); saveChat('assistant', msg); fridaySpeak(msg);
+    return;
+  }
+  const label = text
+    .replace(/(?:set|create|add)\s+(?:a\s+|an?\s+)?alarms?\s*(?:for|at|on|to)?\s*/i, '')
+    .replace(/wake\s+me\s+up\s*(?:for|at|on|in)?\s*/i, '')
+    .replace(/\balarms?\b/gi, '')
+    .replace(/\b(?:in|after)\s+(?:half(?:\s+an)?|a\s+couple(?:\s+of)?|a\s+few|an?|\d+|[a-z]+(?:[\s-][a-z]+)?)\s+(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/i, '')
+    .replace(/\b(?:at|on|for|by)\s+\d{1,2}[:.]?\d{0,2}\s*(?:am|pm)?/i, '')
+    .replace(/\b(tomorrow|tonight|this evening|in the evening|every ?day|daily|each day|every morning|every night)\b/gi, '')
+    .replace(/^\s*\d{1,2}[:.]?\d{0,2}\s*(?:am|pm)?\s*/i, '') // leftover bare time if "at/for/on" was consumed with the alarm prefix
+    .replace(/^\s*(?:to|about|for)\s+/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  const alarm = { id: Date.now(), dueAt, label: label || 'Alarm', repeatDaily, enabled: true };
+  alarms.push(alarm);
+  saveAlarms(); renderAlarmList();
+  const display = formatDueLabel(dueAt);
+  addSystemMsg(`⏰ Alarm set: "${alarm.label}" — ${display}${repeatDaily ? ', every day' : ''}.`);
+}
+
+function checkAlarms() {
+  if (ringingAlarmId != null) return; // one ringing at a time — don't stack overlays
+  const now = Date.now();
+  for (const a of alarms) {
+    if (a.enabled === false) continue;
+    if (a.dueAt <= now) { triggerAlarm(a); break; }
+  }
+}
+
+function triggerAlarm(alarm) {
+  ringingAlarmId = alarm.id;
+  const t = getNow();
+  document.getElementById('alarmRingTime').textContent = t.timeStr;
+  document.getElementById('alarmRingLabel').textContent = alarm.label || '';
+  document.getElementById('alarmOverlay').classList.add('show');
+  startAlarmSound();
+  const announcement = `${config.bossName}, wake up — it's time for ${alarm.label || 'your alarm'}.`;
+  addMsg('anna', `⏰ <strong>ALARM:</strong> ${escHtml(alarm.label || 'Alarm')} — It's ${t.timeStr}.`, 'proactive');
+  fridaySpeak(announcement);
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('A.N.N.A — Alarm', {body: announcement, requireInteraction: true});
+  }
+}
+
+// Louder, more urgent, continuously-repeating tone than the reminder beep —
+// keeps going (like a real alarm clock) until stopAlarm()/snoozeAlarm() fires.
+function playAlarmBeepPattern() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[1200,0,0.18],[900,0.22,0.4],[1200,0.44,0.62],[900,0.66,0.84]].forEach(([f,d,s]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination); o.type = 'square'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.35, ctx.currentTime + d);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + s);
+      o.start(ctx.currentTime + d); o.stop(ctx.currentTime + s);
+    });
+    setTimeout(() => { try { ctx.close(); } catch(e){} }, 1200);
+  } catch(e){}
+}
+function startAlarmSound() {
+  stopAlarmSound();
+  playAlarmBeepPattern();
+  window._alarmSoundInterval = setInterval(playAlarmBeepPattern, 1000);
+}
+function stopAlarmSound() {
+  clearInterval(window._alarmSoundInterval);
+  window._alarmSoundInterval = null;
+}
+
+window.stopAlarm = function() {
+  if (ringingAlarmId == null) return;
+  stopAlarmSound();
+  document.getElementById('alarmOverlay').classList.remove('show');
+  const a = alarms.find(x => x.id === ringingAlarmId);
+  ringingAlarmId = null;
+  if (a) {
+    if (a.repeatDaily) { a.dueAt = nextDailyOccurrence(Date.now()); }
+    else { a.enabled = false; }
+    saveAlarms(); renderAlarmList();
+  }
+  const msg = `Alarm stopped, ${config.bossName}.`;
+  addSystemMsg(msg); fridaySpeak(msg);
+};
+window.snoozeAlarm = function() {
+  if (ringingAlarmId == null) return;
+  stopAlarmSound();
+  document.getElementById('alarmOverlay').classList.remove('show');
+  const a = alarms.find(x => x.id === ringingAlarmId);
+  ringingAlarmId = null;
+  if (a) { a.dueAt = Date.now() + 5*60*1000; saveAlarms(); renderAlarmList(); }
+  const msg = `Snoozed for 5 minutes, ${config.bossName}.`;
+  addSystemMsg(msg); fridaySpeak(msg);
+};
+window.promptSetAlarm = function() {
+  const when = window.prompt('When should the alarm go off? (e.g. "7am", "tomorrow at 6:30am", "in 20 minutes")');
+  if (!when || !when.trim()) return;
+  const what = window.prompt('Label for this alarm? (optional)') || '';
+  handleAlarm(`set an alarm at ${when.trim()}${what.trim() ? ' ' + what.trim() : ''}`);
+};
+
 function parseTimeFromText(text) {
   // Matches: "at 3pm", "at 3:30pm", "at 15:00", "3pm", "9:30 am"
   const m = text.match(/(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
@@ -6827,11 +7070,12 @@ async function loadState() {
     // Config already loaded synchronously at top — just load data
     const t = await dbGet('anna_tasks') || [];
     const sc = await dbGet('anna_schedule') || [];
+    const al = await dbGet('anna_alarms') || [];
     const n = await dbGet('anna_notes') || '';
-    tasks = Array.isArray(t)?t:[]; schedule=Array.isArray(sc)?sc:[];
+    tasks = Array.isArray(t)?t:[]; schedule=Array.isArray(sc)?sc:[]; alarms=Array.isArray(al)?al:[];
     if(n) document.getElementById('notesArea').value=n;
-    renderTasks(); renderSchedule();
-  } catch(e){ tasks=[]; schedule=[]; renderTasks(); renderSchedule(); }
+    renderTasks(); renderSchedule(); renderAlarmList();
+  } catch(e){ tasks=[]; schedule=[]; alarms=[]; renderTasks(); renderSchedule(); renderAlarmList(); }
 }
 
 // ============================================================
