@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -4664,6 +4663,25 @@ async function sendMessage() {
       return;
     }
 
+    // ─── ★ ES MODE — "picture of her" flow (Meta-AI-in-Instagram style) ───
+    // In ES/girlfriend mode, if the user asks what ANNA looks like / for a picture of
+    // her and no reference face is locked in yet, ask them to upload one instead of
+    // silently generating a random face — then reuse it automatically from then on.
+    // Uses the SAME hidden #annaFaceFileInput + handleAnnaFaceUpload() as Settings,
+    // so it's one consistent face-lock system, not a second parallel one.
+    if (mode === 'es' && isAskingForAnnaPicture(text)) {
+      if (!config.annaFaceUrl) {
+        pendingAnnaFaceImagePrompt = { prompt: text, count: (parseImageCountRequest(text)?.count) || 1 };
+        const ask = `I'd love to show you 🥰 I don't have a locked-in look yet though — upload a clear photo and I'll use that exact face for this and every picture from now on.`;
+        addMsg('anna', ask); saveChat('assistant', ask); fridaySpeak(ask);
+        const fi = document.getElementById('annaFaceFileInput');
+        if (fi) fi.click();
+        return;
+      }
+      // Already locked — fall through to normal image generation below, which already
+      // passes config.annaFaceUrl into every generation call for consistency.
+    }
+
     // ─── ★ AI IMAGE GENERATION COMMAND ───
     // Explicit multi-image requests, e.g. "3 images of a cat" or "a few photos of X"
     const countReq = parseImageCountRequest(text);
@@ -5044,6 +5062,29 @@ function parseImageRefinementRequest(text) {
   return extra || 'the same, unchanged';
 }
 
+// Detects "what do you look like", "send me a pic of you/yourself/her", "picture of
+// her", etc. — i.e. the user is asking to SEE Anna herself, not asking Anna to paint
+// some unrelated subject. Deliberately narrow (anchored phrasing) so it doesn't fire
+// on "picture of a cat" or similar.
+function isAskingForAnnaPicture(text) {
+  const t = (text || '').toLowerCase().trim();
+  if (!t) return false;
+  const NOUN = '(?:image|img|picture|pic|photo|photograph|selfie)s?';
+  const SUBJECT = '(?:you|yourself|her|urself)';
+  const patterns = [
+    new RegExp(`\\b(?:send|show|give|share)\\s+me\\s+(?:an?\\s+|some\\s+)?${NOUN}\\s+(?:of\\s+)?${SUBJECT}\\b`),
+    new RegExp(`\\b${NOUN}\\s+of\\s+${SUBJECT}\\b`),
+    new RegExp(`\\bwhat\\s+do\\s+you\\s+look\\s+like\\b`),
+    new RegExp(`\\blet\\s+me\\s+see\\s+${SUBJECT}\\b`),
+    new RegExp(`\\bshow\\s+(?:me\\s+)?${SUBJECT}\\b`),
+  ];
+  return patterns.some(p => p.test(t));
+}
+
+// Holds a queued "picture of her" request while we wait on the user to upload/lock
+// a reference face — resumed by handleAnnaFaceUpload() once the face is saved.
+let pendingAnnaFaceImagePrompt = null;
+
 function parseImageGenRequest(text) {
   let t = (text || '').trim();
   if (!t) return null;
@@ -5356,6 +5397,11 @@ function singleImageMarkup(prompt, url, seed, msgId) {
 // skipEnhance: true when `prompt` is already a rich, purpose-built description (e.g. the
 // image-to-image path already asked the vision model for one) so we don't double-rewrite it.
 async function generateImage(prompt, msgId, count = 1, announceUser = true, skipEnhance = false) {
+  if (isUnsafeFaceImagePrompt(prompt)) {
+    const refusal = `I can't generate that — not with a real uploaded photo locked in as the face. I'm happy to make other pictures though!`;
+    addMsg('anna', refusal); saveChat('assistant', refusal); fridaySpeak(refusal);
+    return;
+  }
   const isRegen = !!msgId;
   count = Math.max(1, Math.min(count || 1, 4));
   setBusy(true);
@@ -5841,6 +5887,18 @@ function handleImageAttachSelect(input) {
 //  generated image, so Anna's face stays consistent instead of
 //  being reinvented by the image model each time.
 // ============================================================
+// ─── Safety: once a REAL uploaded photo is locked in as the reference face, block any
+// request that would put that identifiable face into nude/sexual/undressed imagery.
+// This applies in every mode, not just ES — the risk is the real photo, not the tone
+// of the conversation around it. Deliberately broad/blunt rather than clever, since the
+// downside of a false positive (asking the user to rephrase) is far smaller than the
+// downside of a miss here.
+const UNSAFE_FACE_IMAGE_TERMS = /\b(nude|naked|nudity|topless|undress(?:ed|ing)?|no\s*clothes|without\s+clothes|lingerie|underwear|bikini\s*(?:pic|photo|selfie)?|xxx|nsfw|porn(?:ographic)?|sex(?:ual|y)?|explicit|erotic|strip(?:ping|ped)?|bare\s*(?:chest|breast|body)|bra\s*and\s*panties|onlyfans)\b/i;
+function isUnsafeFaceImagePrompt(prompt) {
+  if (!config.annaFaceUrl) return false; // only matters once a real photo is locked in
+  return UNSAFE_FACE_IMAGE_TERMS.test(prompt || '');
+}
+
 const ANNA_FACE_MAX_MB = 8;
 
 function fileToBase64(file) {
@@ -5927,6 +5985,20 @@ async function handleAnnaFaceUpload(file) {
     statusEl.textContent = hostedUrl
       ? '✅ Face locked! Every generated image will now use this exact face.'
       : '⚠ Could not auto-host the photo (network/CORS blocked it). Face description saved for the text fallback — for full image-lock mode, paste a public image URL above instead.';
+  }
+
+  // Resume a "picture of her" request that was waiting on this upload (ES mode flow).
+  if (pendingAnnaFaceImagePrompt) {
+    const pending = pendingAnnaFaceImagePrompt;
+    pendingAnnaFaceImagePrompt = null;
+    if (hostedUrl) {
+      const confirm = `Got it, locking this in now 💕`;
+      addMsg('anna', confirm); saveChat('assistant', confirm); fridaySpeak(confirm);
+      await generateImage(pending.prompt, null, pending.count || 1);
+    } else {
+      const fail = `Hmm, I couldn't host that photo (network issue) — mind trying a different one?`;
+      addMsg('anna', fail); saveChat('assistant', fail); fridaySpeak(fail);
+    }
   }
 }
 
