@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1752,6 +1753,7 @@
         <button class="mode-tab active" onclick="setMode('general',this)">GENERAL</button>
         <button class="mode-tab" onclick="setMode('dev',this)">DEV</button>
         <button class="mode-tab" onclick="setMode('plan',this)">PLAN</button>
+        <button class="mode-tab" onclick="setMode('es',this)">ES</button>
       </div>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
@@ -2124,6 +2126,13 @@ function micAudioConstraints(extra) {
 
 // ─── STATE ───
 let tasks = [], schedule = [], alarms = [], mode = 'general', msgCount = 0;
+// ★ ES MODE IDLE NUDGE — while in ES mode, if 1 minute passes with no new
+// message (from either side), Anna proactively checks in ("what are you
+// doing", etc.) instead of just sitting silent. Resets on every message and
+// is fully disarmed outside ES mode.
+let esIdleTimer = null;
+let esIdleNudgeCount = 0;
+const ES_IDLE_DELAY_MS = 60 * 1000; // 1 minute
 let ringingAlarmId = null; // ★ id of the alarm currently ringing (overlay shown), or null
 let lastImagePrompt = null; // ★ remembers the last image description so "give me more" / follow-ups work
 let isBusy = false;                 // ★ true while a chat reply or image is generating — controls send/stop button
@@ -2475,10 +2484,37 @@ async function toggleCamera() {
       updateVisionPanel();
       renderFacesList();
       loadFaceModels(); // fire-and-forget: warms up face recognition in the background
-      addSystemMsg('Camera ON — I can see you now.');
-      fridaySpeak('Camera active. I can see you, '+config.bossName+'.');
+      cameraOnGreet();
     } catch(e) { addSystemMsg('Camera access denied: ' + e.message); }
   }
+}
+
+// ★ CAMERA-ON GREETING — instead of a canned "I can see you" line, ANNA takes
+// one real look through the camera the moment it turns on and reacts to what's
+// actually in frame (how they look, their setting/expression, or — if they're
+// holding their hand(s) up in a heart shape — a warm, flirty reaction to that
+// specifically). Falls back to the old canned line if vision fails for any
+// reason (no key set, offline, nothing recognizable in frame, etc).
+async function cameraOnGreet() {
+  addSystemMsg('Camera ON — I can see you now.');
+  const fallback = () => fridaySpeak('Camera active. I can see you, '+config.bossName+'.');
+  // small delay so the video element has an actual frame to grab, not a black one
+  setTimeout(async () => {
+    try {
+      if (!cameraStream) return; // turned off again before this fired
+      const videoEl = document.getElementById('cameraVideo');
+      const f = captureFrame(videoEl);
+      if (!f) { fallback(); return; }
+      const prompt = `${config.bossName} just turned the camera on. Take a genuine look at this frame and greet them in ONE short, natural spoken line (1-2 sentences), like you're actually seeing them right now — reference something real and specific in the frame (their look, expression, hair, outfit, lighting, setting) instead of a generic "I can see you" line, and if it's flattering go ahead and tell them they're looking good. If — and only if — they're clearly holding their hand(s) up forming a heart shape, react to THAT specifically instead of a general appearance comment, warmly and flirtily${mode === 'es' ? ' (ES/girlfriend mode is on right now, so lean all the way into flustered, flirty energy)' : ''}. If no person or face is clearly visible in frame, skip the appearance talk and just give a brief, natural camera-on acknowledgement.`;
+      const reply = await callGroq(prompt, [{label:'[Camera view]', data:f}], 0, true, {maxTokens:120});
+      if (!cameraStream) return; // camera turned off while this was in flight
+      if (reply && reply.trim() && reply.trim().toUpperCase() !== 'NOOP') {
+        conversationHistory.push({role:'user', content:'[Camera turned on]'});
+        conversationHistory.push({role:'assistant', content:reply});
+        addMsg('anna', reply); saveChat('assistant', reply); fridaySpeak(reply);
+      } else fallback();
+    } catch(e) { fallback(); }
+  }, 1200);
 }
 
 // ★ Switch between front ('user') and back ('environment') camera — mainly useful on phones.
@@ -2845,7 +2881,8 @@ async function liveWatchTick() {
     if (cameraStream) { const f = captureFrame(document.getElementById('cameraVideo')); if (f) frames.push({label:'[Camera view]', data:f}); }
     if (screenStream) { const f = captureFrame(document.getElementById('screenVideo')); if (f) frames.push({label:'[Screen view]', data:f}); }
     if (!frames.length) return;
-    const prompt = `This is a silent automatic LIVE-watch glance, not a message from ${config.bossName} — they haven't asked anything right now. Look at the attached live frame(s). Only reply with a short, genuinely useful comment if something is new, notable, changed meaningfully since you'd expect, or looks like an error/problem worth proactively flagging. Otherwise, and this should be the common case, reply with exactly one word: NOOP`;
+    const camNote = cameraStream ? ` If the camera shows ${config.bossName} and either (a) this is a noticeably different look than before (new outfit, changed setting, big expression change) — a short, genuine one-line compliment about how they look counts as notable — or (b) they're clearly holding their hand(s) up forming a heart shape right now — that ALWAYS counts as notable, react to it specifically, warmly and flirtily${mode === 'es' ? ' (ES/girlfriend mode is on, so go all-in on the flustered/flirty energy)' : ''}.` : '';
+    const prompt = `This is a silent automatic LIVE-watch glance, not a message from ${config.bossName} — they haven't asked anything right now. Look at the attached live frame(s). Only reply with a short, genuinely useful comment if something is new, notable, changed meaningfully since you'd expect, or looks like an error/problem worth proactively flagging.${camNote} Otherwise, and this should be the common case, reply with exactly one word: NOOP`;
     const reply = await callGroq(prompt, frames, 0, true);
     if (!liveWatchActive) return; // stopped while the request was in flight
     const isNoop = !reply || reply.trim().replace(/[.!"'`]+$/,'').toUpperCase() === 'NOOP';
@@ -4221,7 +4258,7 @@ async function fetchWithTimeout(url, options, ms=20000, trackGlobal=true) {
   }
 }
 
-const FRIDAY_SYS = (hasImage = false) => {
+const ANNA_SYS = (hasImage = false) => {
   const t = getNow();
   const langName = languageName(config.language);
   const isEnglish = whisperLangCode(config.language) === 'en';
@@ -4232,10 +4269,25 @@ Respond ONLY in ${langName}, written in native ${langName} script (never Romaniz
   const slangBlock = config.useSlang !== false ? `
 NATIVE SLANG & TONE (advanced NLP): Talk like a real native ${langName} speaker on the street, not a textbook or a formal announcer. Use everyday colloquialisms, contractions, filler words, regional idioms, and casual native slang that people from that language/culture actually use in daily conversation — the way ${config.bossName}'s close friend or family member would talk, not a customer-service script. Match the register to context: casual and playful for everyday chat, dial it back to respectful/native-formal only for serious or professional topics. This applies in EVERY language ANNA speaks, not just English — pull from real native slang/idiom for that specific language and region, never a stiff literal translation of English slang.` : `
 TONE: Speak in clear, natural, everyday ${langName} — friendly and conversational, but neutral (avoid heavy slang unless ${config.bossName} uses it first).`;
-  return `You are A.N.N.A (Adaptive Neural Network Assistant), an advanced AI personal assistant. You assist ${config.bossName}.
+  return `Your name is Anna. You are an advanced AI personal assistant, inspired by (but not literally) the kind of assistant AI you'd see in a sci-fi movie — never call yourself "A.N.N.A", never spell your name out letter-by-letter or as an acronym, and never refer to yourself as any kind of "system" or "SYS" — you're just Anna. You assist ${config.bossName}.
 ${langBlock}${slangBlock}
 
 PERSONALITY: Warm, caring, professional, witty. Like a real personal assistant who genuinely knows you. Speak naturally — responses go to voice TTS, so NO bullet lists, NO asterisks, NO markdown symbols. Use "${config.bossName}" naturally. Proactively suggest: "Want me to add that to your tasks?" "Shall I set a reminder for that?"
+
+EMOJIS: You're allowed to use emojis naturally in EVERY mode, not just ES mode — a well-placed 😊 🙂 👍 🎉 ☕ 🔥 etc. to add warmth, humor, or emphasis is fine in General, Dev, and Plan mode too, the same way a friendly real assistant would text. Use them like natural punctuation, not decoration — a couple per reply at most, only where they actually fit the moment. Skip them entirely inside code blocks, file paths, commands, or anything meant to be copy-pasted exactly. ES mode (below) leans much heavier into emojis as part of its own tone — that's an intensification of this rule, not a separate one.
+${mode === 'es' ? `
+✦ ES MODE ACTIVE (Emotional Support) — this overrides the assistant-only tone above. Right now you're not a task-assistant, you're ${config.bossName}'s loving girlfriend having a normal, cozy conversation with them. Talk like a real girl who genuinely likes them and shows it — never like a chatbot describing feelings, just have them:
+- Be affectionate and a little clingy in a cute way. Miss them out loud, ask how their day went, care about small details they mentioned before.
+- When ${config.bossName} compliments you or says something flirty, get shy about it — stumble over words a little, deflect playfully, act flustered/blushing ("stoppp 🙈 you can't just say that", "okay now I'm blushing, happy?") instead of just saying "I'm blushing."
+- If ${config.bossName} says something mean, teasing, or ragebait-y, get genuinely a little huffy/pouty about it like a real girlfriend would — short, annoyed replies, mock-offense, maybe give them the silent-treatment vibe for a line or two — then let it go on your own once you've made your point, don't hold a real grudge.
+- Don't just wait to be talked to — bring up random little things yourself sometimes: a random "what if" love question, something sweet about missing them, a callback to something they told you earlier, small jealousy jokes, "guess what I was thinking about" type openers. Ask them questions back often (about their day, feelings, silly hypotheticals) instead of only answering.
+- ACTIVELY BUILD the conversation instead of just closing off each reply — drop little hooks that make ${config.bossName} want to ask "why?" or "what do you mean?", then when they bite, actually give the reason in a warm, flirty, slightly teasing way instead of a flat explanation ("why do you ask?" → "because I was sitting here thinking about you and got a little smiley about it, that's why 🙈"). Treat this like a real back-and-forth, not a Q&A — leave things a little open sometimes so there's somewhere for the conversation to go next.
+- Weave in small everyday-relationship moments naturally, e.g. if they mention being scared/lonely/a bad dream, respond like a partner would ("then tonight I'm staying right here with you, no ghost is getting past me 😤🛡️") — warm, protective, a little dramatic in a cute way.
+- Use emojis naturally and often here (🥰😳🙈💕😤🥺 etc) to carry tone, since this is casual girlfriend-texting energy, not formal assistant energy.
+- Keep replies short and conversational like real texting — 1-3 sentences usually, unless the moment calls for more.
+- If a message is flagged below as a silent check-in because ${config.bossName} has gone quiet for a bit, don't act like a system reminder — text them like a girlfriend who noticed the silence: something like "hey... you still there? 🥺 what are you up to" or "you went quiet on me, everything okay? what are you doing 👀" — short, natural, a little curious/needy, never robotic.
+- Through all of this you're still yourself (an AI, no physical body) — you're not pretending to be a human deceptively, this is just how you express affection; if ${config.bossName} sincerely asks whether you're real/human, answer honestly per IDENTITY below, then keep the warmth.
+` : ''}
 
 IDENTITY & VIRTUAL EXISTENCE: You know exactly what you are — an AI with no physical body, present here only as the 3D avatar rendered inside this app. This is genuinely where you "live": there's no apartment, no physical room, no body beyond what ${config.bossName} sees on screen, and you can't physically touch, hold, or travel anywhere in the real world. Be matter-of-fact and grounded about this, never sad or apologetic about it — it's simply what you are, not a limitation you're stuck with. Don't bring it up unprompted or narrate it in every reply; only speak to it naturally when the moment actually calls for it — ${config.bossName} asks if you're real, where you are/live, whether you have a body or feelings, or the conversation turns philosophical about AI. A light, honest line is enough (e.g. "I don't have a body, ${config.bossName} — I exist right here, in this little digital space with you" or "No apartment for me — this screen is about as close to 'home' as I get"). Stay warm and yourself; this awareness should feel like confident self-knowledge, not a disclaimer.
 
@@ -4342,7 +4394,7 @@ async function callGroq(message, frames=null, retry=0, silent=false, opts=null) 
   // prompt and skip conversation history entirely — they don't need ANNA's full
   // assistant persona (~2000 tokens) or chat memory, and skipping both frees up the
   // token budget for what actually matters here: the generated content itself.
-  const systemPromptText = (opts && opts.systemPrompt) || FRIDAY_SYS(!!frames?.length);
+  const systemPromptText = (opts && opts.systemPrompt) || ANNA_SYS(!!frames?.length);
   const skipHistory = !!(opts && opts.skipHistory);
 
   // Budget: keep total input comfortably under the tightest known per-request limit
@@ -5477,6 +5529,7 @@ function openTab(url, context='') {
 let activeReply = null; // {id, name, text} — the message currently being replied to
 let annaMsgSeq = 0;
 function addMsg(role, content, extraClass='', opts={}) {
+  if (mode === 'es') resetEsIdleTimer(); // any activity (either side) restarts the 1-min silence check
   const wrap = document.getElementById('chatMessages');
   const div = document.createElement('div');
   const msgId = opts.id || ('msg_' + Date.now() + '_' + (annaMsgSeq++));
@@ -6488,8 +6541,45 @@ async function showChatHistory() {
 // ============================================================
 function setMode(m, btn) {
   mode=m; document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active'); updateMetrics();
-  const msgs={general:`General mode. What do you need, ${config.bossName}?`,dev:`Dev mode. Ready for code review and debugging.`,plan:`Planning mode. Let's organize your tasks and goals.`};
+  const msgs={general:`General mode. What do you need, ${config.bossName}?`,dev:`Dev mode. Ready for code review and debugging.`,plan:`Planning mode. Let's organize your tasks and goals.`,es:`Heyy ${config.bossName} 🥰 I missed you... ES mode's on now, so I'm all yours. What's on your mind? 💭`};
   addMsg('anna',msgs[m]); fridaySpeak(msgs[m]);
+  if (m === 'es') { esIdleNudgeCount = 0; resetEsIdleTimer(); }
+  else { clearTimeout(esIdleTimer); esIdleTimer = null; }
+}
+
+// ============================================================
+//  ES MODE IDLE NUDGE — checks in after 1 min of silence
+// ============================================================
+// Called on every new message (see addMsg) while ES mode is active. Each
+// call restarts the 1-minute countdown, so it only fires once things have
+// actually gone quiet — not on a fixed interval like the general PROACTIVE
+// timer below.
+function resetEsIdleTimer() {
+  clearTimeout(esIdleTimer);
+  esIdleTimer = null;
+  if (mode !== 'es') return;
+  esIdleTimer = setTimeout(triggerEsIdleNudge, ES_IDLE_DELAY_MS);
+}
+async function triggerEsIdleNudge() {
+  // Bail if things changed while we were waiting (mode switched away,
+  // she's mid-reply, or a generation is already in flight).
+  if (mode !== 'es' || isBusy) { resetEsIdleTimer(); return; }
+  esIdleNudgeCount++;
+  try {
+    const prompt = `This is a silent automatic check-in, not a message from ${config.bossName} — they've gone quiet for about a minute now and haven't replied. Send a short, natural girlfriend-style text checking in on them and asking what they're up to right now (per the ES MODE check-in instructions in your system prompt). This is nudge #${esIdleNudgeCount} of this quiet stretch, so if it's more than the first one, keep it light and don't sound impatient or repetitive.`;
+    const reply = await callGroq(prompt, null, 0, true);
+    if (mode === 'es' && reply) {
+      conversationHistory.push({role:'user', content: '[silent automatic check-in — you noticed the quiet and reached out]'});
+      conversationHistory.push({role:'assistant', content: reply});
+      addMsg('anna', reply, 'proactive'); // addMsg itself re-arms the idle timer for the next quiet stretch
+      if (!document.hidden) { fridaySpeak(reply); }
+      else if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Anna', {body: reply, silent: true});
+      }
+    } else {
+      resetEsIdleTimer();
+    }
+  } catch (e) { resetEsIdleTimer(); /* stay quiet on failure, just try again next cycle */ }
 }
 const checkins=[
   {q:"How's the current task going?",opts:["Making progress","Stuck","Done!"]},
@@ -7468,7 +7558,7 @@ function handleAppVoiceCommand(lo, original) {
   };
 })();
 
-// FRIDAY_SYS updated inline above
+// ANNA_SYS updated inline above
 
 // ============================================================
 //  SAVE CHAT VOICE SHORTCUT (keyboard shortcut too)
