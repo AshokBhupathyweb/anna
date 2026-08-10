@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1789,10 +1788,9 @@
       </div>
       <div class="voice-controls" id="voiceControlsRow">
         <button class="voice-btn" id="tapTalkBtn" onclick="toggleTapTalk()">🎙 TAP</button>
-        <button class="voice-btn" id="alwaysOnBtn" onclick="toggleAlwaysOn()" title="Always-On voice mode — hands-free, continuous back-and-forth like Gemini Live / GPT Voice Mode">🎧 LIVE</button>
         <button class="voice-btn" id="newChatBtn" onclick="newChat()" title="Clear all messages — start fresh" style="border-color:var(--red);color:var(--red);opacity:0.75;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">🗑 NEW</button>
       </div>
-      <div class="input-hint">🎙 TAP = record · 🎧 LIVE = hands-free always-on voice mode (just talk, she listens &amp; replies automatically) · 📎/paste/drag = attach a file (image, PDF, Word, text, code) · ENTER = send · click ⬛ to stop · Say "add task X" · "delete task X" · "note: X" · "remind me at 3pm X" · 🗑 NEW = clear chat</div>
+      <div class="input-hint">🎙 TAP = record · 📎/paste/drag = attach a file (image, PDF, Word, text, code) · ENTER = send · click ⬛ to stop · Say "add task X" · "delete task X" · "note: X" · "remind me at 3pm X" · 🗑 NEW = clear chat</div>
     </div>
   </div>
 
@@ -2416,7 +2414,7 @@ async function grantMic() {
     prewarmTapSR(); // pre-warm SR so first TAP fires instantly
     startMicKeepalive(); // keep mic alive — prevents repeated permission prompts
     startClapDetector();  // 👏 double-clap toggles hands-free
-    // Always-On voice mode is opt-in only — start it from the 🎧 LIVE button, not automatically.
+    setTimeout(() => startAlwaysOn(), 800);
   } catch(e) {
     addSystemMsg('⚠ Mic denied — please allow microphone access in your browser settings, then refresh.');
   }
@@ -3744,65 +3742,13 @@ function forceRestartListening() {
   _restartSR(200);
 }
 
-// ============================================================
-//  🎧 ALWAYS-ON / LIVE VOICE MODE — continuous hands-free conversation,
-//  like Gemini Live / ChatGPT Voice Mode: she just listens (mic only, with
-//  echo-cancellation + noise-suppression via micAudioConstraints()), replies
-//  by voice automatically, then goes right back to listening — no tapping,
-//  no typing, no touching the screen at all once it's on.
-// ============================================================
-function updateAlwaysOnBtn(on) {
-  const btn = document.getElementById('alwaysOnBtn');
-  if (!btn) return;
-  btn.classList.toggle('always-on', !!on);
-  btn.textContent = on ? '🎧 LIVE ●' : '🎧 LIVE';
-  btn.title = on
-    ? 'Always-On voice mode is ACTIVE — just talk, tap to stop'
-    : 'Always-On voice mode — hands-free, continuous back-and-forth like Gemini Live / GPT Voice Mode';
-}
-
-async function startAlwaysOn() {
-  if (isAlwaysOn) return;
-  // Switching modes: TAP recording and any in-progress speech must yield first
-  if (isTapRecording) stopTap();
-  if (isSpeaking) interruptSpeech();
-
-  // ★ Only acquire the mic if we truly don't have a live track — never re-prompt.
-  // micAudioConstraints() already turns on echoCancellation + noiseSuppression +
-  // autoGainControl so she only picks up the human voice, not room noise.
-  const streamOk = micStream && micStream.getTracks().some(t => t.readyState === 'live');
-  if (!streamOk) {
-    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({
-        audio: micAudioConstraints(),
-        video: false
-      });
-      document.getElementById('micBanner').classList.add('hidden');
-    } catch(e) {
-      addSystemMsg('⚠ Mic permission denied. Allow microphone access to use Always-On voice mode.');
-      return;
-    }
-  }
-
-  isAlwaysOn = true;
-  startListening(); // builds/reuses the continuous SpeechRecognition loop, sets status + button
-  startMicKeepalive();
-  addSystemMsg('🎧 Always-On voice mode active — just talk, I\'ll listen and reply automatically. Tap 🎧 LIVE again to stop.');
-}
-
-function stopAlwaysOn() {
-  stopListening();
-}
-
-async function toggleAlwaysOn() {
-  if (isAlwaysOn) {
-    stopAlwaysOn();
-    addSystemMsg('🎧 Always-On voice mode stopped.');
-  } else {
-    await startAlwaysOn();
-  }
-}
+// ★ REMOVED FEATURE: "Always On" continuous hands-free listening + its button.
+// These stubs are kept only because a couple of internal call sites still
+// reference them defensively (e.g. if SpeechRecognition permission is denied);
+// they now simply do nothing instead of enabling the old always-listening mode.
+function updateAlwaysOnBtn(on) { /* button removed — no-op */ }
+function startAlwaysOn() { /* feature removed — TAP-to-talk only now */ }
+function toggleAlwaysOn() { /* feature removed — use toggleTapTalk() instead */ }
 
 function pauseRecognition() {
   if (window.srRecognition) { try { window.srRecognition.abort(); } catch(e) {} }
@@ -3867,16 +3813,14 @@ function startInterruptMonitor() {
       if (!interruptActive || !isSpeaking) { stopInterruptMonitor(); return; }
       interruptAnalyser.getByteFrequencyData(data);
       const avg = data.slice(7,80).reduce((a,b)=>a+b,0)/73;
-      // ★ FIX 2: Raised threshold from 55→78 and required sustained duration
-      // from 800→1600ms — speaker echo/feedback (ANNA hearing her own voice
-      // through the mic with no headphones) was still tripping the old
-      // threshold and cutting her off mid-reply almost every turn.
-      loudFor = avg > 78 ? loudFor + 80 : Math.max(0, loudFor - 60);
-      if (loudFor >= 1600) { interruptSpeech(); return; }
+      // ★ FIX 1: Raised threshold from 18→55 and required duration from 250→800ms
+      // so speaker echo never false-triggers an interrupt
+      loudFor = avg > 55 ? loudFor + 80 : Math.max(0, loudFor - 40);
+      if (loudFor >= 800) { interruptSpeech(); return; }
       setTimeout(check, 80);
     };
-    // ★ FIX 5: 3.5 second startup delay so TTS onset never fires interrupt
-    setTimeout(check, 3500);
+    // ★ FIX 5: 2 second startup delay so TTS onset never fires interrupt
+    setTimeout(check, 2000);
   } catch(e) { interruptActive = false; }
 }
 function stopInterruptMonitor() {
