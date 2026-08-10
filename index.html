@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3866,14 +3867,16 @@ function startInterruptMonitor() {
       if (!interruptActive || !isSpeaking) { stopInterruptMonitor(); return; }
       interruptAnalyser.getByteFrequencyData(data);
       const avg = data.slice(7,80).reduce((a,b)=>a+b,0)/73;
-      // ★ FIX 1: Raised threshold from 18→55 and required duration from 250→800ms
-      // so speaker echo never false-triggers an interrupt
-      loudFor = avg > 55 ? loudFor + 80 : Math.max(0, loudFor - 40);
-      if (loudFor >= 800) { interruptSpeech(); return; }
+      // ★ FIX 2: Raised threshold from 55→78 and required sustained duration
+      // from 800→1600ms — speaker echo/feedback (ANNA hearing her own voice
+      // through the mic with no headphones) was still tripping the old
+      // threshold and cutting her off mid-reply almost every turn.
+      loudFor = avg > 78 ? loudFor + 80 : Math.max(0, loudFor - 60);
+      if (loudFor >= 1600) { interruptSpeech(); return; }
       setTimeout(check, 80);
     };
-    // ★ FIX 5: 2 second startup delay so TTS onset never fires interrupt
-    setTimeout(check, 2000);
+    // ★ FIX 5: 3.5 second startup delay so TTS onset never fires interrupt
+    setTimeout(check, 3500);
   } catch(e) { interruptActive = false; }
 }
 function stopInterruptMonitor() {
