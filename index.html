@@ -1347,7 +1347,17 @@
           <button type="button" class="fs-tool-btn" title="Underline (Ctrl+U)" onmousedown="event.preventDefault()" onclick="fsExec('underline')"><u>U</u></button>
           <button type="button" class="fs-tool-btn" title="Strikethrough" onmousedown="event.preventDefault()" onclick="fsExec('strikeThrough')"><s>S</s></button>
           <div class="fs-tool-sep"></div>
+          <select class="fs-tool-select" id="fsFontFamilySelect" title="Font style" onmousedown="event.stopPropagation()" onchange="fsSetFontFamily(this.value); this.selectedIndex=-1;">
+            <option value="" disabled selected hidden>Font</option>
+            <option value="default">Default</option>
+            <option value="sans">Sans-serif</option>
+            <option value="serif">Serif</option>
+            <option value="mono">Monospace</option>
+            <option value="rounded">Rounded</option>
+          </select>
+          <div class="fs-tool-sep"></div>
           <button type="button" class="fs-tool-btn" title="Decrease character size" onmousedown="event.preventDefault()" onclick="fsChangeFontSize(-1)">A⁻</button>
+          <input type="number" id="fsFontSizeInput" min="8" max="48" step="1" value="11" title="Font size (px)" onmousedown="event.stopPropagation()" onchange="fsSetFontSize(parseFloat(this.value)||11)" style="width:40px;background:rgba(0,212,255,0.05);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.62rem;padding:5px 2px;border-radius:3px;text-align:center;">
           <button type="button" class="fs-tool-btn" title="Increase character size" onmousedown="event.preventDefault()" onclick="fsChangeFontSize(1)">A⁺</button>
           <div class="fs-tool-sep"></div>
           <label class="fs-tool-color-wrap" title="Text color">🎨<input type="color" id="fsTextColor" value="#c8eaf5" onmousedown="event.stopPropagation()" oninput="fsExec('foreColor', this.value)"></label>
@@ -1363,9 +1373,12 @@
             <option value="justifyFull">☰ Justify</option>
           </select>
           <div class="fs-tool-sep"></div>
+          <button type="button" class="fs-tool-btn" title="Insert image" onmousedown="event.preventDefault()" onclick="fsTriggerImagePicker()">🖼 Image</button>
+          <input type="file" id="fsImageFileInput" accept="image/*" style="display:none" onchange="fsInsertImageFromFile(this.files[0]); this.value='';">
+          <div class="fs-tool-sep"></div>
           <button type="button" class="fs-tool-btn" title="Clear formatting" onmousedown="event.preventDefault()" onclick="fsExec('removeFormat')">Clear</button>
         </div>
-        <div id="fileCreatorContent" contenteditable="true" data-placeholder="Type content here, import a file, or use AI Generate above..." style="flex:1;min-height:0;background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:12px;outline:none;overflow-y:auto;line-height:1.7;border-radius:0 0 4px 4px;margin-bottom:12px" oninput="fsMarkDirty()" onpaste="fsHandlePaste(event)"></div>
+        <div id="fileCreatorContent" contenteditable="true" data-placeholder="Type content here, import a file, or use AI Generate above..." style="flex:1;min-height:0;background:rgba(0,10,25,0.9);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:0.68rem;padding:12px;outline:none;overflow-y:auto;line-height:1.7;border-radius:0 0 4px 4px;margin-bottom:12px" oninput="fsMarkDirty()" onpaste="fsHandlePaste(event)" onmouseup="fsSyncFontSizeDisplay()" onkeyup="fsSyncFontSizeDisplay()" onfocus="fsSyncFontSizeDisplay()"></div>
       </div>
       <div id="fsPreviewView" style="flex:1;min-height:0;margin-bottom:12px;display:none;background:#fff;border:1px solid var(--border);border-radius:4px;overflow:auto;">
         <iframe id="fsPreviewFrame" style="width:100%;height:100%;min-height:260px;border:none;display:none;background:#fff;"></iframe>
@@ -1775,9 +1788,10 @@
       </div>
       <div class="voice-controls" id="voiceControlsRow">
         <button class="voice-btn" id="tapTalkBtn" onclick="toggleTapTalk()">🎙 TAP</button>
+        <button class="voice-btn" id="alwaysOnBtn" onclick="toggleAlwaysOn()" title="Always-On voice mode — hands-free, continuous back-and-forth like Gemini Live / GPT Voice Mode">🎧 LIVE</button>
         <button class="voice-btn" id="newChatBtn" onclick="newChat()" title="Clear all messages — start fresh" style="border-color:var(--red);color:var(--red);opacity:0.75;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.75'">🗑 NEW</button>
       </div>
-      <div class="input-hint">🎙 TAP = record · 📎/paste/drag = attach a file (image, PDF, Word, text, code) · ENTER = send · click ⬛ to stop · Say "add task X" · "delete task X" · "note: X" · "remind me at 3pm X" · 🗑 NEW = clear chat</div>
+      <div class="input-hint">🎙 TAP = record · 🎧 LIVE = hands-free always-on voice mode (just talk, she listens &amp; replies automatically) · 📎/paste/drag = attach a file (image, PDF, Word, text, code) · ENTER = send · click ⬛ to stop · Say "add task X" · "delete task X" · "note: X" · "remind me at 3pm X" · 🗑 NEW = clear chat</div>
     </div>
   </div>
 
@@ -2401,7 +2415,7 @@ async function grantMic() {
     prewarmTapSR(); // pre-warm SR so first TAP fires instantly
     startMicKeepalive(); // keep mic alive — prevents repeated permission prompts
     startClapDetector();  // 👏 double-clap toggles hands-free
-    setTimeout(() => startAlwaysOn(), 800);
+    // Always-On voice mode is opt-in only — start it from the 🎧 LIVE button, not automatically.
   } catch(e) {
     addSystemMsg('⚠ Mic denied — please allow microphone access in your browser settings, then refresh.');
   }
@@ -3729,13 +3743,65 @@ function forceRestartListening() {
   _restartSR(200);
 }
 
-// ★ REMOVED FEATURE: "Always On" continuous hands-free listening + its button.
-// These stubs are kept only because a couple of internal call sites still
-// reference them defensively (e.g. if SpeechRecognition permission is denied);
-// they now simply do nothing instead of enabling the old always-listening mode.
-function updateAlwaysOnBtn(on) { /* button removed — no-op */ }
-function startAlwaysOn() { /* feature removed — TAP-to-talk only now */ }
-function toggleAlwaysOn() { /* feature removed — use toggleTapTalk() instead */ }
+// ============================================================
+//  🎧 ALWAYS-ON / LIVE VOICE MODE — continuous hands-free conversation,
+//  like Gemini Live / ChatGPT Voice Mode: she just listens (mic only, with
+//  echo-cancellation + noise-suppression via micAudioConstraints()), replies
+//  by voice automatically, then goes right back to listening — no tapping,
+//  no typing, no touching the screen at all once it's on.
+// ============================================================
+function updateAlwaysOnBtn(on) {
+  const btn = document.getElementById('alwaysOnBtn');
+  if (!btn) return;
+  btn.classList.toggle('always-on', !!on);
+  btn.textContent = on ? '🎧 LIVE ●' : '🎧 LIVE';
+  btn.title = on
+    ? 'Always-On voice mode is ACTIVE — just talk, tap to stop'
+    : 'Always-On voice mode — hands-free, continuous back-and-forth like Gemini Live / GPT Voice Mode';
+}
+
+async function startAlwaysOn() {
+  if (isAlwaysOn) return;
+  // Switching modes: TAP recording and any in-progress speech must yield first
+  if (isTapRecording) stopTap();
+  if (isSpeaking) interruptSpeech();
+
+  // ★ Only acquire the mic if we truly don't have a live track — never re-prompt.
+  // micAudioConstraints() already turns on echoCancellation + noiseSuppression +
+  // autoGainControl so she only picks up the human voice, not room noise.
+  const streamOk = micStream && micStream.getTracks().some(t => t.readyState === 'live');
+  if (!streamOk) {
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: micAudioConstraints(),
+        video: false
+      });
+      document.getElementById('micBanner').classList.add('hidden');
+    } catch(e) {
+      addSystemMsg('⚠ Mic permission denied. Allow microphone access to use Always-On voice mode.');
+      return;
+    }
+  }
+
+  isAlwaysOn = true;
+  startListening(); // builds/reuses the continuous SpeechRecognition loop, sets status + button
+  startMicKeepalive();
+  addSystemMsg('🎧 Always-On voice mode active — just talk, I\'ll listen and reply automatically. Tap 🎧 LIVE again to stop.');
+}
+
+function stopAlwaysOn() {
+  stopListening();
+}
+
+async function toggleAlwaysOn() {
+  if (isAlwaysOn) {
+    stopAlwaysOn();
+    addSystemMsg('🎧 Always-On voice mode stopped.');
+  } else {
+    await startAlwaysOn();
+  }
+}
 
 function pauseRecognition() {
   if (window.srRecognition) { try { window.srRecognition.abort(); } catch(e) {} }
@@ -8462,7 +8528,19 @@ function fsSanitizePastedHTML(html) {
   const blockTags = ['DIV','P','LI','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','TR','TD','TH','TABLE','TBODY','THEAD','SECTION','ARTICLE'];
   const container = document.createElement('div');
   container.innerHTML = html;
-  container.querySelectorAll('script,style,meta,link,head,title,img').forEach(el => el.remove());
+  container.querySelectorAll('script,style,meta,link,head,title').forEach(el => el.remove());
+  // Images: keep them (so pasting from Word/Docs/a webpage brings the picture along),
+  // but only if the src is a safe, self-contained data: URL or a normal http(s) URL —
+  // anything else (javascript:, blob: referencing another page, etc.) is stripped.
+  container.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src') || '';
+    if (!/^(data:image\/|https?:\/\/)/i.test(src)) { img.remove(); return; }
+    const alt = img.getAttribute('alt') || '';
+    Array.from(img.attributes).forEach(a => img.removeAttribute(a.name));
+    img.setAttribute('src', src);
+    if (alt) img.setAttribute('alt', alt);
+    img.setAttribute('style', 'max-width:100%;height:auto;');
+  });
   // No auto-inserted bullet/number markers — list items just become their own line.
 
   // Recursively: keep allowed inline formatting tags (rebuilt with only a filtered,
@@ -8473,8 +8551,9 @@ function fsSanitizePastedHTML(html) {
   function clean(node) {
     Array.from(node.childNodes).forEach(child => {
       if (child.nodeType !== 1) { if (child.nodeType !== 3) child.remove(); return; }
-      clean(child);
       const tag = child.tagName;
+      if (tag === 'IMG') return; // already sanitized above; leave as-is
+      clean(child);
       if (tag === 'BR') return;
       // Headings: wrap their (already-cleaned) content in a bold, sized <b> so the size/
       // weight survives once the heading tag itself is flattened away below.
@@ -8535,6 +8614,16 @@ function fsSanitizePastedHTML(html) {
 function fsHandlePaste(e) {
   e.preventDefault();
   const cd = e.clipboardData || window.clipboardData;
+  // A pasted screenshot or "copy image" (e.g. from Preview, a chat app, or the OS
+  // screenshot tool) shows up as a raw image file in clipboardData.items rather than
+  // as text/html — handle that case first so it isn't silently dropped.
+  const items = cd.items || [];
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].kind === 'file' && items[i].type && items[i].type.startsWith('image/')) {
+      const file = items[i].getAsFile();
+      if (file) { fsInsertImageFromFile(file); return; }
+    }
+  }
   const html = cd.getData('text/html');
   if (html && html.trim()) {
     try {
@@ -8566,6 +8655,48 @@ function fsHandlePaste(e) {
   fsMarkDirty();
 }
 
+// Opens the hidden file input so the user can pick an image from disk to
+// insert into the editor (the toolbar "🖼 Image" button).
+function fsTriggerImagePicker() {
+  const input = document.getElementById('fsImageFileInput');
+  if (input) input.click();
+}
+// Reads an image File (from the file picker or a clipboard paste) as a data
+// URL and inserts it into the editor at the current cursor position. Using a
+// data: URL keeps the image fully self-contained inside the editor's HTML, so
+// it survives download-as-file and "review with ANNA" without needing any
+// server upload.
+function fsInsertImageFromFile(file) {
+  if (!file || !file.type || !file.type.startsWith('image/')) return;
+  const editor = document.getElementById('fileCreatorContent');
+  if (!editor) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    editor.focus();
+    const sel = window.getSelection();
+    // If focus was lost (e.g. picker dialog), fall back to appending at the end.
+    if (!sel || !sel.rangeCount || !editor.contains(sel.anchorNode)) {
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    const img = document.createElement('img');
+    img.src = reader.result;
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(img);
+    range.setStartAfter(img);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    fsMarkDirty();
+  };
+  reader.readAsDataURL(file);
+}
 // ── Rich-text toolbar (Bold/Italic/Underline/color/size/lists/align) ──────
 // The editor is a contenteditable div rather than a plain textarea, so these
 // buttons apply real, visible formatting as you type (WYSIWYG), the same way
@@ -8578,22 +8709,40 @@ function fsExec(cmd, value) {
 }
 // "Character size increase/decrease" — bumps the font-size of the current
 // selection (or the whole editor, if nothing is selected) by a couple px per click.
+// Reads the live font-size number field, if present, so successive clicks step from
+// what's actually displayed rather than re-deriving it from the DOM each time.
 function fsChangeFontSize(delta) {
+  fsSetFontSize(fsGetCurrentFontSizePx() + delta * 2);
+}
+// Returns the font-size (px, rounded) in effect at the current cursor/selection
+// position, or the editor's own default if nothing is focused inside it yet.
+function fsGetCurrentFontSizePx() {
+  const editor = document.getElementById('fileCreatorContent');
+  const sel = window.getSelection();
+  let refEl = editor;
+  if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+    const node = sel.getRangeAt(0).commonAncestorContainer;
+    refEl = node.nodeType === 1 ? node : node.parentElement;
+  }
+  return Math.round(parseFloat(getComputedStyle(refEl || editor).fontSize) || 11);
+}
+// Sets an absolute font size (px) on the current selection, or the whole editor if
+// nothing is selected — shared by the A-/A+ step buttons and by typing a number
+// directly into the size field.
+function fsSetFontSize(px) {
   const editor = document.getElementById('fileCreatorContent');
   editor.focus();
+  const size = Math.max(8, Math.min(48, px || 11));
   const sel = window.getSelection();
-  const step = delta * 2;
   if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-    const cur = parseFloat(getComputedStyle(editor).fontSize) || 11;
-    editor.style.fontSize = Math.max(8, Math.min(48, cur + step)) + 'px';
+    editor.style.fontSize = size + 'px';
+    fsSyncFontSizeDisplay();
     fsMarkDirty();
     return;
   }
   const range = sel.getRangeAt(0);
-  const refEl = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
-  const baseSize = parseFloat(getComputedStyle(refEl || editor).fontSize) || 11;
   const span = document.createElement('span');
-  span.style.fontSize = Math.max(8, Math.min(48, baseSize + step)) + 'px';
+  span.style.fontSize = size + 'px';
   try {
     range.surroundContents(span);
   } catch (e) {
@@ -8606,8 +8755,33 @@ function fsChangeFontSize(delta) {
   const newRange = document.createRange();
   newRange.selectNodeContents(span);
   sel.addRange(newRange);
+  fsSyncFontSizeDisplay();
   fsMarkDirty();
 }
+// Keeps the toolbar's numeric size field showing whatever size is actually in effect
+// where the cursor currently sits, so the A-/A+ buttons and direct typing both start
+// from a number the user can trust rather than a stale one from the last edit.
+function fsSyncFontSizeDisplay() {
+  const input = document.getElementById('fsFontSizeInput');
+  if (!input) return;
+  input.value = fsGetCurrentFontSizePx();
+}
+// Named "font styles" the toolbar dropdown offers. Each maps to both a CSS font stack
+// (applied live in the editor via execCommand) and, for scripts using core Latin text
+// with no embedded language font, one of jsPDF's three built-in PDF fonts — so the
+// choice actually shows up differently in the exported PDF too, not just on screen.
+const FS_FONT_FAMILIES = {
+  default: { css: "'Share Tech Mono', monospace", pdf: 'helvetica' },
+  sans:    { css: "Arial, Helvetica, sans-serif", pdf: 'helvetica' },
+  serif:   { css: "Georgia, 'Times New Roman', serif", pdf: 'times' },
+  mono:    { css: "'Courier New', Courier, monospace", pdf: 'courier' },
+  rounded: { css: "Verdana, Geneva, sans-serif", pdf: 'helvetica' },
+};
+function fsSetFontFamily(key) {
+  const spec = FS_FONT_FAMILIES[key];
+  if (!spec) return;
+  fsExec('fontName', spec.css);
+} 
 // Reads the editor's content in whatever shape the current output type needs:
 // HTML files keep full markup (so bold/color/etc. survive into the download),
 // every other type is flattened to plain text (formatting stays visual-only).
@@ -8986,11 +9160,47 @@ async function fsEnsureScriptFont(doc, scriptKey, onProgress) {
 // pass the section list here to get a clickable Table of Contents page + page-number footers.
 // opts.onProgress: optional callback(message) fired while a language font is downloading / building.
 // ── Rich-text → PDF rendering ────────────────────────────────────────────
+// Resolves an <img> element's src into PDF-ready image data: reads natural pixel
+// dimensions directly off the element (already loaded in the live editor), and for
+// data: URLs reuses the string as-is. Remote http(s) sources (e.g. an image pasted
+// in from a webpage) get fetched and redrawn onto a canvas to produce an embeddable
+// data URL — jsPDF's addImage can't fetch a bare URL itself. Returns null (rather
+// than throwing) if the image can't be resolved, so one bad image doesn't kill the
+// whole PDF export.
+async function fsResolveImageForPdf(imgEl) {
+  const src = imgEl.getAttribute('src') || '';
+  const w = imgEl.naturalWidth || imgEl.width || 300;
+  const h = imgEl.naturalHeight || imgEl.height || 200;
+  if (/^data:image\//i.test(src)) {
+    const format = /data:image\/png/i.test(src) ? 'PNG' : /data:image\/webp/i.test(src) ? 'WEBP' : 'JPEG';
+    return { dataUrl: src, format, width: w, height: h };
+  }
+  if (/^https?:\/\//i.test(src)) {
+    try {
+      const resp = await fetch(src, { mode: 'cors' });
+      const blob = await resp.blob();
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const format = blob.type.includes('png') ? 'PNG' : blob.type.includes('webp') ? 'WEBP' : 'JPEG';
+      return { dataUrl, format, width: w, height: h };
+    } catch (e) {
+      console.warn('Could not fetch remote image for PDF (likely CORS):', e);
+      return null;
+    }
+  }
+  return null;
+}
 // Walks the File Studio editor's live DOM and turns it into a flat list of
 // styled text "runs" (bold/italic/underline/strike/color/highlight/font-size),
 // using getComputedStyle so it doesn't matter which exact tags the browser's
 // execCommand happened to produce — the resolved style is what gets rendered.
-function fsCollectRichRuns(root) {
+// Async because inline <img> elements may need a network fetch to resolve
+// (see fsResolveImageForPdf) before they can be turned into a PDF-embeddable run.
+async function fsCollectRichRuns(root) {
   const runs = [];
   const pxToPt = px => px * 0.75; // 96dpi CSS px → PDF pt
   // The editor uses a pale cyan as its default on-screen text color (readable on the app's
@@ -8998,6 +9208,24 @@ function fsCollectRichRuns(root) {
   // inherited default renders as normal black text in the PDF; only text the user actually
   // recolored with the toolbar's color button keeps its custom color.
   const inheritedColor = getComputedStyle(root).color;
+  // The editor <div> itself has an explicit dark theme background (so it's readable
+  // against the app's UI). getComputedStyle().backgroundColor returns that same value
+  // for any text sitting directly under the editor root with no highlight of its own —
+  // without this check it gets mistaken for a real hiliteColor highlight and painted as
+  // a near-black filled rectangle behind the text in the PDF. Only a background that
+  // differs from this inherited default is a highlight the user actually applied.
+  const inheritedBg = getComputedStyle(root).backgroundColor;
+  // Same idea for font family: only a font the user explicitly picked from the toolbar's
+  // "Font" dropdown (different from the editor's own default typeface) should change
+  // which jsPDF core font a run renders with.
+  const inheritedFontFamily = getComputedStyle(root).fontFamily;
+  function pdfFontFromFamily(family) {
+    const f = (family || '').toLowerCase();
+    if (f.includes('courier') || f.includes('mono')) return 'courier';
+    if (f.includes('sans-serif') || f.includes('arial') || f.includes('helvetica') || f.includes('verdana')) return 'helvetica';
+    if (f.includes('serif') || f.includes('times') || f.includes('georgia')) return 'times';
+    return null;
+  }
   function styleFor(el) {
     const cs = getComputedStyle(el);
     const decoration = (cs.textDecorationLine || cs.textDecoration || '');
@@ -9007,7 +9235,8 @@ function fsCollectRichRuns(root) {
       underline: decoration.includes('underline'),
       strike: decoration.includes('line-through'),
       color: cs.color === inheritedColor ? 'rgb(0, 0, 0)' : cs.color,
-      bg: cs.backgroundColor,
+      bg: cs.backgroundColor === inheritedBg ? 'transparent' : cs.backgroundColor,
+      pdfFont: cs.fontFamily === inheritedFontFamily ? null : pdfFontFromFamily(cs.fontFamily),
       sizePt: pxToPt(parseFloat(cs.fontSize) || 11)
     };
   }
@@ -9021,34 +9250,40 @@ function fsCollectRichRuns(root) {
       if (i < parts.length - 1) out.push({ lineBreak: true });
     });
   }
-  function walk(node, out) {
+  async function walk(node, out) {
     if (node.nodeType === Node.TEXT_NODE) {
       if (node.textContent) pushTextNode(node, styleFor(node.parentElement || root), out);
       return;
     }
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     if (node.tagName === 'BR') { out.push({ lineBreak: true }); return; }
-    if (node.tagName === 'UL' || node.tagName === 'OL') {
-      let n = 1;
-      Array.from(node.children).forEach(li => {
-        if (li.tagName !== 'LI') return;
-        out.push({ bulletMark: node.tagName === 'OL' ? (n++ + '.') : '•' });
-        Array.from(li.childNodes).forEach(c => walk(c, out));
-        out.push({ lineBreak: true });
-      });
+    if (node.tagName === 'IMG') {
+      const resolved = await fsResolveImageForPdf(node);
+      if (resolved) out.push({ image: resolved });
       return;
     }
-    Array.from(node.childNodes).forEach(c => walk(c, out));
+    if (node.tagName === 'UL' || node.tagName === 'OL') {
+      let n = 1;
+      for (const li of Array.from(node.children)) {
+        if (li.tagName !== 'LI') continue;
+        out.push({ bulletMark: node.tagName === 'OL' ? (n++ + '.') : '•' });
+        for (const c of Array.from(li.childNodes)) await walk(c, out);
+        out.push({ lineBreak: true });
+      }
+      return;
+    }
+    for (const c of Array.from(node.childNodes)) await walk(c, out);
   }
   const topNodes = Array.from(root.childNodes);
-  topNodes.forEach((node, i) => {
+  for (let i = 0; i < topNodes.length; i++) {
+    const node = topNodes[i];
     if (node.nodeType === Node.TEXT_NODE) {
       if (node.textContent) pushTextNode(node, styleFor(root), runs);
     } else {
-      walk(node, runs);
+      await walk(node, runs);
     }
     if (i < topNodes.length - 1) runs.push({ lineBreak: true }); // each top-level <div> is one typed line
-  });
+  }
   return runs;
 }
 function fsParseRgb(str) {
@@ -9070,7 +9305,8 @@ function fsRenderRichRuns(doc, runs, opts) {
       if (run.bold && run.italic) style = 'bolditalic';
       else if (run.bold) style = 'bold';
       else if (run.italic) style = 'italic';
-      try { doc.setFont('helvetica', style); } catch (e) { doc.setFont('helvetica', 'normal'); }
+      const base = run.pdfFont || 'helvetica';
+      try { doc.setFont(base, style); } catch (e) { try { doc.setFont(base, 'normal'); } catch (e2) { doc.setFont('helvetica', 'normal'); } }
     }
     doc.setFontSize(run.sizePt || 11);
     const [r, g, b] = fsParseRgb(run.color);
@@ -9078,6 +9314,22 @@ function fsRenderRichRuns(doc, runs, opts) {
   }
   runs.forEach(run => {
     if (run.lineBreak) { y += lineHeight || 15; x = margin; return; }
+    if (run.image) {
+      // A block-level image breaks out of the current text line, gets centered and
+      // scaled to fit the page width (never upscaled past its own natural size), and
+      // pushes a fresh page if it wouldn't fit in the remaining space.
+      if (x !== margin) { y += lineHeight || 15; x = margin; }
+      const img = run.image;
+      const ratio = img.height / img.width;
+      const w = Math.min(maxWidth, img.width * 0.75);
+      const h = w * ratio;
+      ensureRoom(h);
+      try {
+        doc.addImage(img.dataUrl, img.format, margin + (maxWidth - w) / 2, y, w, h);
+        y += h + lineHeight * 0.5;
+      } catch (e) { console.warn('PDF image embed failed:', e); }
+      return;
+    }
     if (run.bulletMark) {
       ensureRoom(lineHeight || 15);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(0, 0, 0);
@@ -9179,7 +9431,7 @@ async function fsBuildPdfBlob(content, titleText, opts = {}) {
     // ★ Content came straight from the File Studio WYSIWYG editor — render it using each
     // run's actual bold/italic/underline/color/font-size instead of flattening everything
     // to one uniform style, so the PDF visually matches what was typed.
-    const runs = fsCollectRichRuns(richRoot);
+    const runs = await fsCollectRichRuns(richRoot);
     y = fsRenderRichRuns(doc, runs, { margin, maxWidth, pageW, pageH, y, fontName, align });
   } else {
   paragraphs.forEach(para => {
