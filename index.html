@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1902,9 +1903,8 @@
     <div class="form-group">
       <label class="form-label">GROQ MODEL</label>
       <select class="form-input" id="groqModel">
-        <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant ⚡ Fastest</option>
-        <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile — Smartest</option>
-        <option value="gemma2-9b-it">Gemma2 9B</option>
+        <option value="openai/gpt-oss-20b">GPT-OSS 20B ⚡ Fastest</option>
+        <option value="openai/gpt-oss-120b">GPT-OSS 120B — Smartest</option>
       </select>
     </div>
     <div class="form-group">
@@ -2096,7 +2096,7 @@
 let config = {
   groqKey: '',   // ← intentionally blank — enter in ⚙ CONFIG
   bossName: 'Boss',
-  groqModel: 'llama-3.1-8b-instant',
+  groqModel: 'openai/gpt-oss-20b',
   preferredMicId: '', // ← mic device ID — empty = system default
   language: 'en-US',      // ← speaking + listening language (BCP-47 code)
   voiceGender: 'auto',    // ← 'auto' | 'female' | 'male'
@@ -2113,6 +2113,28 @@ try {
   if (saved.groqKey) config.groqKey = saved.groqKey;
   if (saved.bossName) config.bossName = saved.bossName;
   if (saved.groqModel) config.groqModel = saved.groqModel;
+  // ★ MIGRATION: Groq decommissioned these old model IDs — auto-remap any
+  // previously-saved value so stale localStorage never resurrects the error.
+  const DEPRECATED_MODEL_MAP = {
+    'llama-3.1-8b-instant': 'openai/gpt-oss-20b',
+    'llama-3.3-70b-versatile': 'openai/gpt-oss-120b',
+    'llama-3.1-70b-versatile': 'openai/gpt-oss-120b',
+    'llama3-70b-8192': 'openai/gpt-oss-120b',
+    'llama3-8b-8192': 'openai/gpt-oss-20b',
+    'gemma2-9b-it': 'openai/gpt-oss-20b',
+    'mistral-saba-24b': 'openai/gpt-oss-120b',
+    'qwen-qwq-32b': 'openai/gpt-oss-120b',
+    'qwen/qwen3-32b': 'openai/gpt-oss-120b',
+    'meta-llama/llama-4-scout-17b-16e-instruct': 'openai/gpt-oss-120b'
+  };
+  if (DEPRECATED_MODEL_MAP[config.groqModel]) {
+    config.groqModel = DEPRECATED_MODEL_MAP[config.groqModel];
+    try {
+      const fixed = JSON.parse(localStorage.getItem('anna_config') || '{}');
+      fixed.groqModel = config.groqModel;
+      localStorage.setItem('anna_config', JSON.stringify(fixed));
+    } catch (e) {}
+  }
   if (saved.preferredMicId) config.preferredMicId = saved.preferredMicId;
   if (saved.language) config.language = saved.language;
   if (saved.voiceGender) config.voiceGender = saved.voiceGender;
@@ -4264,6 +4286,25 @@ async function fetchWithTimeout(url, options, ms=20000, trackGlobal=true) {
   try {
     const res = await fetch(url, {...options, signal: controller.signal});
     return res;
+  } catch (e) {
+    // ★ FIX: some browser extensions (ad blockers / privacy tools / Grammarly-
+    // style content scripts) monkey-patch window.fetch and try to relay the
+    // request — including its AbortSignal — to their content script via
+    // window.postMessage. AbortSignal can't be structure-cloned, so THEIR
+    // wrapper throws "Failed to execute 'postMessage' ... AbortSignal object
+    // could not be cloned" before our real request even completes. This is
+    // not a bug in our request — retry once with no AbortSignal at all,
+    // using a manual timeout race instead, so the extension has nothing to
+    // choke on.
+    if (String(e?.message || '').includes('postMessage') && String(e?.message || '').includes('AbortSignal')) {
+      const { signal, ...optionsNoSignal } = options || {};
+      const res = await Promise.race([
+        fetch(url, optionsNoSignal),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out.')), ms))
+      ]);
+      return res;
+    }
+    throw e;
   } finally {
     clearTimeout(timer);
     if (trackGlobal && currentAbortController === controller) currentAbortController = null;
@@ -4422,8 +4463,8 @@ async function callGroq(message, frames=null, retry=0, silent=false, opts=null) 
   // auto-upgrade to it whenever a non-English language is selected —
   // regardless of the model chosen in ⚙ CONFIG — to keep native-language
   // replies working correctly.
-  const needsStrongModel = whisperLangCode(config.language) !== 'en' && config.groqModel === 'llama-3.1-8b-instant';
-  const model = (frames?.length) ? VISION_MODEL : (needsStrongModel ? 'llama-3.3-70b-versatile' : config.groqModel);
+  const needsStrongModel = whisperLangCode(config.language) !== 'en' && config.groqModel === 'openai/gpt-oss-20b';
+  const model = (frames?.length) ? VISION_MODEL : (needsStrongModel ? 'openai/gpt-oss-120b' : config.groqModel);
   const maxTokens = (opts && opts.maxTokens) || 500;
   // Long-form generation (e.g. multi-section document writing) asks for far more tokens
   // than a normal chat reply — scale the timeout with it so a big section isn't aborted
@@ -5383,7 +5424,7 @@ async function enhanceImagePromptForGen(rawPrompt) {
     const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + config.groqKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: sys }, { role: 'user', content: rawPrompt }], max_tokens: 260, temperature: 0.7 })
+      body: JSON.stringify({ model: 'openai/gpt-oss-120b', messages: [{ role: 'system', content: sys }, { role: 'user', content: rawPrompt }], max_tokens: 260, temperature: 0.7 })
     }, 12000);
     if (!res.ok) return rawPrompt;
     const d = await res.json();
@@ -13388,7 +13429,7 @@ async function vsEnhancePromptWithAI(raw){
   const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
     method:'POST',
     headers:{'Authorization':'Bearer '+config.groqKey,'Content-Type':'application/json'},
-    body: JSON.stringify({ model: config.groqModel || 'llama-3.3-70b-versatile', messages:[{role:'system',content:sys},{role:'user',content:raw}], max_tokens:220, temperature:0.8 })
+    body: JSON.stringify({ model: config.groqModel || 'openai/gpt-oss-120b', messages:[{role:'system',content:sys},{role:'user',content:raw}], max_tokens:220, temperature:0.8 })
   }, 15000);
   if (!res.ok) throw new Error('groq failed');
   const d = await res.json();
